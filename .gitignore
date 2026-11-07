@@ -35,3 +35,6 @@ build/
 exports/
 eval/runs/
 eval/autotests/
+
+# Сторонний скилл дизайна (ставится командой npx skills add pbakaus/impeccable --skill impeccable)
+.claude/skills/impeccable/
