@@ -31,7 +31,7 @@ profiles:
     max_output_tokens: 8192
     max_concurrency: 8
     rpm: 300
-    price: {input: null, cached_input: null, output: null}
+    price: {input: 0.75, cached_input: 0.075, output: 3.75}   # цены 3.7 на странице нет — оценка по 3.8
   # gemini-4-argon не используем: слишком дорогой (решение пользователя 2026-11-07)
   gemini-pro31:
     provider: gemini
@@ -72,5 +72,5 @@ profiles:
 roles:
   judge: gemini-flash          # оценка критериев
   strong: gemini-flash-high    # второе мнение, конструктор критерия, тренажёр, тьютор
-  cross_check: gemma-api       # перекрёстная проверка: другое семейство моделей + превью локального режима
+  cross_check: gemini-flash-37 # перекрёстная проверка: другая версия модели (Gemma по API — мало квоты, обрезает ответы)
   signals: gemini-flash        # причина обращения, вопросы без ответа

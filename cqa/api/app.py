@@ -179,6 +179,17 @@ def create_app(dev: bool = False, fake: bool = False, *, worker: bool = True) ->
     api = APIRouter(prefix="/api")
     for mod in (health, datasets, conversations, evaluations, runs, checklists, appeals, export):
         api.include_router(mod.router)
+    # Остальные модули в cqa/api/routes/ с объектом `router` подключаются автоматически (фичи P1–P3).
+    import importlib
+    import pkgutil
+    import cqa.api.routes as _routes_pkg
+    _core = {"health", "datasets", "conversations", "evaluations", "runs", "checklists", "appeals", "export", "views"}
+    for info in sorted(pkgutil.iter_modules(_routes_pkg.__path__), key=lambda i: i.name):
+        if info.name in _core or info.name.startswith("_"):
+            continue
+        extra = importlib.import_module(f"cqa.api.routes.{info.name}")
+        if hasattr(extra, "router"):
+            api.include_router(extra.router)
     app.include_router(api)
 
     s = get_settings()
