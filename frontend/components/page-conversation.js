@@ -152,8 +152,12 @@
       var lastAudio = 0;
       c.messages.forEach(function (m) { if (m.audio_sec != null) lastAudio = Math.max(lastAudio, m.audio_sec); });
 
+      var isTrainer = CQA.isTrainerUid(c.uid);
       var actions = h('div', { class: 'row' },
-        h('button', { class: 'btn', type: 'button', onClick: function () { self.reevaluate(this); } },
+        isTrainer ? ui.badge(t('conv.trainerDialog'), 'brand', 'target') : null,
+        !isTrainer ? h('a', { class: 'btn', href: CQA.trainHref(c.uid, { operator: CQA.me.get() || c.operator_name }), title: t('conv.trainTitle') },
+          icon('target'), t('conv.train')) : null,
+        isTrainer ? null : h('button', { class: 'btn', type: 'button', onClick: function () { self.reevaluate(this); } },
           icon('flash'), this.ev ? t('conv.reevaluate') : t('conv.evaluate')));
       CQA.dom.replace(this.header,
         h('div', { class: 'conv-header__main' },
@@ -162,7 +166,7 @@
             h('h1', { class: 't-subtitle1 conv-title' }, c.external_id),
             ui.badge(c.language, 'neutral', 'globe'),
             ui.badge(U.channelLabel(c.channel), 'neutral', U.channelIcon(c.channel)),
-            c.operator_name ? ui.badge(c.operator_name, 'neutral', 'headset') : null,
+            c.operator_name ? h('a', { class: 'badge-link', href: CQA.operatorHref(c.operator_name), title: t('conv.operatorProfile') }, ui.badge(c.operator_name, 'neutral', 'headset')) : null,
             h('span', { class: 'muted t-caption1' }, t('conv.messages', { n: c.messages.length }) + (isCall && lastAudio ? ' · ' + t('conv.recording', { d: fmt.clock(lastAudio) }) : '') + ' · ' + c.group_id))),
         actions);
 
@@ -209,7 +213,9 @@
         return;
       }
       this.evalEl = document.createElement('cqa-evaluation');
-      this.evalEl.data = { evaluation: this.ev, tops: this.tops, appeals: this.appealsById, selected: this.selectedCid };
+      this.evalEl.data = { evaluation: this.ev, tops: this.tops, appeals: this.appealsById, selected: this.selectedCid,
+        trainUid: CQA.isTrainerUid(this.uid) ? null : this.uid, trainOperator: CQA.me.get() || (this.conv && this.conv.operator_name) || null,
+        canAppeal: CQA.isTrainerUid(this.uid) ? false : undefined };
       this.evalPane.appendChild(this.evalEl);
     }
 

@@ -339,8 +339,35 @@
           h('dt', null, t('decision.total')),
           h('dd', null, next != null ? CQA.score(next, prev, { max: true }) : '—')),
         h('div', { class: 'card__footer' },
-          h('a', { class: 'btn btn--primary', href: '#/c/' + encodeURIComponent(a.uid) + '?crit=' + encodeURIComponent(a.criterion_id) }, icon('chat'), t('decision.openCard')),
+          h('a', { class: d.make_precedent ? 'btn' : 'btn btn--primary', href: '#/c/' + encodeURIComponent(a.uid) + '?crit=' + encodeURIComponent(a.criterion_id) }, icon('chat'), t('decision.openCard')),
           h('a', { class: 'btn', href: '#/appeals' }, t('decision.toList')))));
+      if (d.make_precedent) this.renderPrecedent();
+    }
+
+    /** Решение стало прецедентом → путь «версия чек-листа с примером → проверка на похожих → было/стало». */
+    renderPrecedent() {
+      var self = this, a = this.appeal;
+      if (!this.precBox) { this.precBox = h('div'); this.right.appendChild(this.precBox); }
+      var card = function (body) {
+        return h('section', { class: 'card prec-card', 'aria-labelledby': 'ap-prec' },
+          h('div', { class: 'card__header' },
+            h('div', null, h('h2', { class: 'card__title row', id: 'ap-prec' }, icon('sparkle'), t('prec.flowTitle')),
+              h('div', { class: 'muted t-caption1' }, t('prec.flowSub')))),
+          body);
+      };
+      CQA.dom.replace(this.precBox, card(ui.skeleton('text', 3)));
+      CQA.api.precedents(a.criterion_id).then(function (list) {
+        var mine = (list || []).filter(function (p) { return p.appeal_id === a.id; });
+        if (!mine.length) { CQA.dom.replace(self.precBox, card(ui.msgbar('warning', t('prec.notFoundForAppeal')))); return; }
+        var flow = document.createElement('cqa-precedent-flow');
+        flow.data = { precedents: mine.slice(0, 1) };
+        CQA.dom.replace(self.precBox, card(h('div', { class: 'stack' },
+          h('div', { class: 'row t-caption1' }, h('span', { class: 'muted' }, t('prec.thisOne', { id: mine[0].id })),
+            h('a', { href: '#/checklists/' + encodeURIComponent(CQA.config.checklistId) + '/precedents' }, t('prec.allLink'))),
+          flow)));
+      }, function (err) {
+        CQA.dom.replace(self.precBox, card(ui.error(err, function () { self.renderPrecedent(); })));
+      });
     }
   }
 

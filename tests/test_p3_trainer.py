@@ -47,7 +47,9 @@ def test_persona_hides_hidden_question(env):
     assert "hidden_question" not in s["persona"]
     assert "fake hidden_question" not in json.dumps(s, ensure_ascii=False)
     assert "reveal_if_asked" not in s["persona"]   # детали «только если спросят» скрыты до конца сессии
-    for k in ("title", "goal", "already_told", "character", "satisfied_when", "leaves_when"):
+    for k in ("satisfied_when", "leaves_when"):   # подсказывают ожидаемый ответ — скрыты до конца сессии
+        assert k not in s["persona"]
+    for k in ("title", "goal", "already_told", "character"):
         assert k in s["persona"]
     assert s["persona"]["language"] == "RU"
     assert s["criteria_focus"] == ["04"] and s["operator"] == "Стажёр"

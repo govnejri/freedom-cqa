@@ -254,6 +254,29 @@
     settings: function () { return request('GET', '/settings'); },
     saveSettings: function (roles) { return request('PUT', '/settings', { body: { roles: roles } }); },
 
+    // ---- P2: операторы, срезы, прецеденты
+    operators: function (group) { return request('GET', '/operators', { query: { group: group } }); },
+    operator: function (name, group) { return request('GET', '/operators/' + enc(name), { query: { group: group } }); },
+    operatorSummary: function (name, group) { return request('POST', '/operators/' + enc(name) + '/summary', { query: { group: group } }); },
+    assignOperator: function (uid, name) { return request('PUT', '/conversations/' + enc(uid) + '/operator', { body: { name: name || null } }); },
+    slices: function (by, group) { return request('GET', '/slices', { query: { by: by, group: group } }); },
+    precedents: function (criterion) { return request('GET', '/precedents', { query: { criterion: criterion } }); },
+    precedentsToVersion: function (ids, comment) { return request('POST', '/precedents/to-version', { body: { precedent_ids: ids, comment: comment || null } }); },
+    precedentSimilar: function (id, limit) { return request('GET', '/precedents/' + id + '/similar', { query: { limit: limit || 5 } }); },
+
+    // ---- P3: тренажёр, тьютор, ассистент
+    trainerSessions: function (params) { return request('GET', '/trainer/sessions', { query: params }); },
+    trainerSession: function (id) { return request('GET', '/trainer/sessions/' + id); },
+    createTrainerSession: function (dto) { return request('POST', '/trainer/sessions', { body: dto }); },
+    trainerReply: function (id, text) { return request('POST', '/trainer/sessions/' + id + '/reply', { body: { text: text } }); },
+    trainerFinish: function (id) { return request('POST', '/trainer/sessions/' + id + '/finish'); },
+    lessons: function () { return request('GET', '/trainer/lessons'); },
+    createLesson: function (uids, title) { return request('POST', '/trainer/lessons', { body: { base_uids: uids, title: title } }); },
+    tutorAsk: function (dto) { return request('POST', '/tutor/ask', { body: dto }); },
+    bestAnswers: function (params) { return request('GET', '/tutor/best-answers', { query: params }); },
+    assistantAsk: function (question, group) { return request('POST', '/assistant/ask', { body: { question: question, group: group || null } }); },
+    assistantExamples: function () { return request('GET', '/assistant/examples'); },
+
     /** Ссылка на экспорт (для прямого открытия, если скачивание из iframe заблокировано). */
     exportUrl: function (params) { return url('/export', params); },
     exportBlob: function (params) {

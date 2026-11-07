@@ -94,7 +94,7 @@
           var el = document.createElement('cqa-criterion');
           el.data = {
             cr: c, top: d.tops && d.tops[c.criterion_id], appeal: c.appeal_id && d.appeals ? d.appeals[c.appeal_id] : null,
-            selected: d.selected === c.criterion_id, canAppeal: d.canAppeal
+            selected: d.selected === c.criterion_id, canAppeal: d.canAppeal, trainUid: d.trainUid, trainOperator: d.trainOperator
           };
           self.items[c.criterion_id] = el;
           sec.appendChild(el);

@@ -49,7 +49,7 @@ OUTCOME_LIMIT = "лимит ходов"
 
 PERSONA_FIELDS = ("title", "goal", "already_told", "reveal_if_asked", "hidden_question", "character",
                   "satisfied_when", "leaves_when")
-HIDDEN_FIELDS = ("hidden_question", "reveal_if_asked")  # оператор не видит, пока сессия не завершена:
+HIDDEN_FIELDS = ("hidden_question", "reveal_if_asked", "satisfied_when", "leaves_when")  # скрыто до конца сессии:
 # иначе выявление потребности (02) не тренируется — детали, которые клиент выдаст только на вопрос, были бы видны
 LANGUAGE_LABEL = {"RU": "русский", "KZ": "казахский", "EN": "английский"}
 ROLE_LABEL = {"client": "КЛИЕНТ", "operator": "ОПЕРАТОР", "bot": "БОТ", "system": "СИСТЕМА", "unknown": "НЕИЗВЕСТНО"}

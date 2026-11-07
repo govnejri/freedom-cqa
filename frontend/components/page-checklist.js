@@ -20,7 +20,7 @@
 
     update(params, query) {
       if (params.cid !== this.cid || !this.versions) return false;
-      var samePath = this.params && params.vid === this.params.vid && params.a === this.params.a && params.b === this.params.b;
+      var samePath = this.params && params.vid === this.params.vid && params.a === this.params.a && params.b === this.params.b && params.tab === this.params.tab;
       this.params = params;
       this.query = query;
       this.renderAll();
@@ -61,12 +61,25 @@
       var title = (act && act.config && act.config.title) || (this.versions[0].config && this.versions[0].config.title) || this.cid;
       var newest = this.versions[0];
       var cmpBase = act && act.id !== newest.id ? act : this.versions[1];
+      var base = '#/checklists/' + encodeURIComponent(this.cid);
+      var isPrec = p.tab === 'precedents';
       CQA.dom.replace(this.root,
         h('div', { class: 'page-header' },
           h('div', null, h('h1', null, t('nav.checklist')), h('div', { class: 'page-header__sub' }, title + ' · ', h('span', { class: 'mono' }, this.cid))),
-          cmpBase ? h('a', { class: 'btn', href: '#/checklists/' + encodeURIComponent(this.cid) + '/diff/' + cmpBase.id + '/' + newest.id },
+          cmpBase && !isPrec ? h('a', { class: 'btn', href: base + '/diff/' + cmpBase.id + '/' + newest.id },
             icon('compare'), t('cl.compareVersions')) : null),
+        h('nav', { class: 'tabs cl-tabs', 'aria-label': t('cl.tabsAria') },
+          h('a', { class: 'tab', href: base, 'aria-current': isPrec ? null : 'page', 'aria-selected': String(!isPrec) }, icon('checklist'), t('cl.tabVersions')),
+          h('a', { class: 'tab', href: base + '/precedents', 'aria-current': isPrec ? 'page' : null, 'aria-selected': String(isPrec) }, icon('scale'), t('cl.tabPrecedents'))),
         h('div', { class: 'cl-layout' }, this.aside, this.main));
+      if (isPrec) {
+        document.title = t('cl.tabPrecedents') + ' · ' + t('nav.checklist') + ' · CQA';
+        this.renderAside(null);
+        CQA.dom.replace(this.main, h('div', { class: 'stack stack--l' },
+          ui.msgbar('info', t('prec.introTitle'), t('prec.intro')),
+          document.createElement('cqa-precedents')));
+        return;
+      }
       if (p.a && p.b) {
         this.renderAside(null);
         this.renderDiff(this.byId(p.a), this.byId(p.b));

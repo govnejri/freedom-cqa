@@ -192,6 +192,7 @@
         tbody)) : h('p', { class: 'muted' }, t('rd.noChangedRows'));
 
       CQA.dom.replace(this.box,
+        d.demo_note ? ui.msgbar('warning', t('mode.mock'), d.demo_note) : null,
         progress,
         tiles,
         extraNote,

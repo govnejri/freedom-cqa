@@ -136,6 +136,14 @@
               icon('chat', 'icon--16'), q.external_id + ' · ' + q.mid,
               q.score != null ? h('span', { class: 'muted' }, ' · ' + t('unans.score', { s: fmt.score(q.score) })) : null)));
         });
+        var uids = [], seen = {};
+        tp.questions.forEach(function (q) { if (!seen[q.uid]) { seen[q.uid] = 1; uids.push({ uid: q.uid, label: q.external_id, note: q.text }); } });
+        if (uids.length) {
+          qs.appendChild(h('li', { class: 'unans__lesson' },
+            h('button', { class: 'btn btn--small', type: 'button', title: t('lesson.fromTopicTitle'), onClick: function () {
+              CQA.openLessonDialog({ title: t('lesson.topicTitle', { topic: cap(tp.topic) }), items: uids });
+            } }, icon('people'), t('lesson.fromTopic', { n: uids.length }))));
+        }
         list.appendChild(h('details', { class: 'unans__topic' },
           h('summary', null,
             icon('chevronRight', 'icon--16 unans__chev'),

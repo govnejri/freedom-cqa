@@ -161,6 +161,10 @@
         foot.appendChild(h('button', { class: 'btn btn--small crit__dispute', type: 'button',
           onClick: function () { fire(self, 'cqa-appeal', { cid: cr.criterion_id }); } }, icon('scale'), t('crit.dispute')));
       }
+      if (d.trainUid && cr.status !== 'failed' && CQA.isViolation && CQA.isViolation(verdict, cr.type, d.top)) {
+        foot.appendChild(h('a', { class: 'btn btn--small crit__train', href: CQA.trainHref(d.trainUid, { focus: [cr.criterion_id], operator: d.trainOperator }),
+          title: t('crit.trainTitle', { id: cr.criterion_id }) }, CQA.icon('target'), t('crit.train')));
+      }
       if (foot.childNodes.length) body.appendChild(foot);
       this.selected = d.selected;
     }

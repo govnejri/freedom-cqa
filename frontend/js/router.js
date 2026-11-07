@@ -2,21 +2,32 @@
 (function (CQA) {
   'use strict';
 
+  // roles: в каких ролях маршрут «свой» (первая — домашняя). Прямая ссылка на маршрут чужой роли переключает роль.
+  var ALL = ['lead', 'qa', 'operator'];
   var routes = [
-    { re: /^\/?$/, tag: 'cqa-page-dashboard', nav: 'dashboard', keys: [] },
-    { re: /^\/conversations\/?$/, tag: 'cqa-page-conversations', nav: 'conversations', keys: [] },
-    { re: /^\/c\/([^/]+)$/, tag: 'cqa-page-conversation', nav: 'conversations', keys: ['uid'] },
-    { re: /^\/appeals\/?$/, tag: 'cqa-page-appeals', nav: 'appeals', keys: [] },
-    { re: /^\/appeals\/(\d+)$/, tag: 'cqa-page-appeal', nav: 'appeals', keys: ['id'] },
-    { re: /^\/checklists\/([^/]+)\/?$/, tag: 'cqa-page-checklist', nav: 'checklist', keys: ['cid'] },
-    { re: /^\/checklists\/([^/]+)\/v\/(\d+)$/, tag: 'cqa-page-checklist', nav: 'checklist', keys: ['cid', 'vid'] },
-    { re: /^\/checklists\/([^/]+)\/diff\/(\d+)\/(\d+)$/, tag: 'cqa-page-checklist', nav: 'checklist', keys: ['cid', 'a', 'b'] },
-    { re: /^\/runs\/(\d+)$/, tag: 'cqa-page-run', nav: 'dashboard', keys: ['id'] },
-    { re: /^\/runs\/(\d+)\/diff$/, tag: 'cqa-page-run-diff', nav: 'checklist', keys: ['id'] },
-    { re: /^\/risks\/?$/, tag: 'cqa-page-risks', nav: 'risks', keys: [] },
-    { re: /^\/log\/(\d+)$/, tag: 'cqa-page-log', nav: 'conversations', keys: ['id'] },
-    { re: /^\/quality\/?$/, tag: 'cqa-page-quality', nav: 'quality', keys: [] },
-    { re: /^\/settings\/?$/, tag: 'cqa-page-settings', nav: 'settings', keys: [] }
+    { re: /^\/?$/, tag: 'cqa-page-dashboard', nav: 'dashboard', keys: [], roles: ['lead'] },
+    { re: /^\/risks\/?$/, tag: 'cqa-page-risks', nav: 'risks', keys: [], roles: ['lead'] },
+    { re: /^\/slices\/?$/, tag: 'cqa-page-slices', nav: 'slices', keys: [], roles: ['lead'] },
+    { re: /^\/assistant\/?$/, tag: 'cqa-page-assistant', nav: 'assistant', keys: [], roles: ['lead'] },
+    { re: /^\/conversations\/?$/, tag: 'cqa-page-conversations', nav: 'conversations', keys: [], roles: ['qa', 'lead'] },
+    { re: /^\/c\/([^/]+)$/, tag: 'cqa-page-conversation', nav: 'conversations', keys: ['uid'], roles: ['qa', 'lead', 'operator'] },
+    { re: /^\/appeals\/?$/, tag: 'cqa-page-appeals', nav: 'appeals', keys: [], roles: ['qa'] },
+    { re: /^\/appeals\/(\d+)$/, tag: 'cqa-page-appeal', nav: 'appeals', keys: ['id'], roles: ['qa'] },
+    { re: /^\/checklists\/([^/]+)\/?$/, tag: 'cqa-page-checklist', nav: 'checklist', keys: ['cid'], roles: ['qa'] },
+    { re: /^\/checklists\/([^/]+)\/(precedents)$/, tag: 'cqa-page-checklist', nav: 'checklist', keys: ['cid', 'tab'], roles: ['qa'] },
+    { re: /^\/checklists\/([^/]+)\/v\/(\d+)$/, tag: 'cqa-page-checklist', nav: 'checklist', keys: ['cid', 'vid'], roles: ['qa'] },
+    { re: /^\/checklists\/([^/]+)\/diff\/(\d+)\/(\d+)$/, tag: 'cqa-page-checklist', nav: 'checklist', keys: ['cid', 'a', 'b'], roles: ['qa'] },
+    { re: /^\/runs\/(\d+)$/, tag: 'cqa-page-run', nav: 'dashboard', keys: ['id'], roles: ALL },
+    { re: /^\/runs\/(\d+)\/diff$/, tag: 'cqa-page-run-diff', nav: 'checklist', keys: ['id'], roles: ['qa', 'lead'] },
+    { re: /^\/log\/(\d+)$/, tag: 'cqa-page-log', nav: 'conversations', keys: ['id'], roles: ALL },
+    { re: /^\/quality\/?$/, tag: 'cqa-page-quality', nav: 'quality', keys: [], roles: ['qa'] },
+    { re: /^\/operators\/?$/, tag: 'cqa-page-operators', nav: 'profile', keys: [], roles: ['operator', 'lead', 'qa'] },
+    { re: /^\/operators\/([^/]+)$/, tag: 'cqa-page-operator', nav: 'profile', keys: ['name'], roles: ['operator', 'lead', 'qa'] },
+    { re: /^\/trainer\/?$/, tag: 'cqa-page-trainer', nav: 'trainer', keys: [], roles: ['operator'] },
+    { re: /^\/trainer\/new$/, tag: 'cqa-page-trainer-new', nav: 'trainer', keys: [], roles: ['operator'] },
+    { re: /^\/trainer\/(\d+)$/, tag: 'cqa-page-trainer-session', nav: 'trainer', keys: ['id'], roles: ['operator'] },
+    { re: /^\/tutor\/?$/, tag: 'cqa-page-tutor', nav: 'tutor', keys: [], roles: ['operator'] },
+    { re: /^\/settings\/?$/, tag: 'cqa-page-settings', nav: 'settings', keys: [], roles: ALL }
   ];
 
   var outlet = null;
@@ -119,6 +130,7 @@
       } catch (e) { /* iframe с ограничениями: просто молча оставляем URL */ }
     },
     get current() { return current; },
+    routes: routes,
     onChange: function (fn) { listeners.push(fn); }
   };
 

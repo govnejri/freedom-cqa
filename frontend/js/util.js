@@ -97,7 +97,14 @@
     server: '<rect x="3.5" y="3.5" width="13" height="5" rx="1"/><rect x="3.5" y="11.5" width="13" height="5" rx="1"/><path d="M6.5 6h.1M6.5 14h.1"/>',
     key: '<circle cx="7" cy="12.5" r="3.2"/><path d="m9.3 10.2 6.7-6.7M13.5 6l2 2"/>',
     code: '<path d="m7 6-4 4 4 4M13 6l4 4-4 4"/>',
-    link: '<path d="M8.5 11.5a3 3 0 0 0 4.2 0l2.6-2.6a3 3 0 0 0-4.2-4.2l-.9.9M11.5 8.5a3 3 0 0 0-4.2 0l-2.6 2.6a3 3 0 0 0 4.2 4.2l.9-.9"/>'
+    link: '<path d="M8.5 11.5a3 3 0 0 0 4.2 0l2.6-2.6a3 3 0 0 0-4.2-4.2l-.9.9M11.5 8.5a3 3 0 0 0-4.2 0l-2.6 2.6a3 3 0 0 0 4.2 4.2l.9-.9"/>',
+    grid: '<rect x="3.5" y="3.5" width="5" height="5" rx="1"/><rect x="11.5" y="3.5" width="5" height="5" rx="1"/><rect x="3.5" y="11.5" width="5" height="5" rx="1"/><rect x="11.5" y="11.5" width="5" height="5" rx="1"/>',
+    book: '<path d="M10 5.5C8.5 4.3 6.3 3.8 3.5 4v11.5c2.8-.2 5 .3 6.5 1.5 1.5-1.2 3.7-1.7 6.5-1.5V4c-2.8-.2-5 .3-6.5 1.5zM10 5.5V17"/>',
+    target: '<circle cx="10" cy="10" r="7"/><circle cx="10" cy="10" r="4"/><circle cx="10" cy="10" r="1" fill="currentColor"/>',
+    menu: '<path d="M3.5 5.5h13M3.5 10h13M3.5 14.5h13"/>',
+    people: '<circle cx="7.5" cy="7" r="2.7"/><path d="M2.5 16.5a5 5 0 0 1 10 0"/><path d="M12.8 4.6a2.7 2.7 0 0 1 0 5.1M14.5 12a5 5 0 0 1 3 4.5"/>',
+    trend: '<path d="M3.5 14.5 8 10l3 3 5.5-6.5"/><path d="M12.5 6.5h4v4"/>',
+    bulb: '<path d="M7.5 14.5h5M8 17h4M10 3a5 5 0 0 0-3 9c.6.5 1 1.2 1 2h4c0-.8.4-1.5 1-2a5 5 0 0 0-3-9z"/>'
   };
 
   function icon(name, cls) {
@@ -426,6 +433,34 @@
 
   function uidSeq(prefix) { uidSeq.n = (uidSeq.n || 0) + 1; return (prefix || 'id') + '-' + uidSeq.n; }
 
+  // ---------------------------------------------------------------- P2/P3: общие помощники
+  /** Текст ошибки для человека: у 422 реального API текст лежит в detail[].msg, а не в message. */
+  function errText(err) {
+    if (!err) return '';
+    var ve = CQA.api && CQA.api.validationErrors ? CQA.api.validationErrors(err) : [];
+    if (ve.length) return ve.map(function (x) { return x.msg; }).join('; ');
+    return err.message || String(err);
+  }
+
+  /** «Я» — оператор, выбранный в разделе «Мой профиль» (для тренажёра и тьютора). */
+  var LS_ME = 'cqa.operator';
+  var me = {
+    get: function () { return store.get(LS_ME, null); },
+    set: function (name) {
+      store.set(LS_ME, name || null);
+      document.dispatchEvent(new CustomEvent('cqa-me-changed', { detail: { name: name || null } }));
+    }
+  };
+
+  /** Таймер ожидания «12 с»: обновляет el раз в секунду, возвращает stop(). */
+  function elapsed(el, t0) {
+    t0 = t0 || Date.now();
+    var tick = function () { el.textContent = fmt.duration((Date.now() - t0) / 1000); };
+    tick();
+    var id = setInterval(function () { if (!el.isConnected) { clearInterval(id); return; } tick(); }, 1000);
+    return function () { clearInterval(id); return (Date.now() - t0) / 1000; };
+  }
+
   CQA.h = h;
   CQA.dom = { h: h, append: append, clear: clear, replace: replace, scrollIntoPane: scrollIntoPane, uid: uidSeq };
   CQA.icon = icon;
@@ -435,6 +470,8 @@
   CQA.util = {
     debounce: debounce, deepClone: deepClone, sameJson: sameJson, downloadBlob: downloadBlob,
     verdictTone: verdictTone, verdictLabel: verdictLabel, scoreTone: scoreTone,
-    channelLabel: channelLabel, channelIcon: channelIcon
+    channelLabel: channelLabel, channelIcon: channelIcon,
+    errText: errText, elapsed: elapsed
   };
+  CQA.me = me;
 })(window.CQA = window.CQA || {});
