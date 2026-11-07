@@ -5,6 +5,7 @@
 - оценку можно оспорить, проверяющий принимает решение;
 - критерий можно изменить в интерфейсе и применить к диалогам.
 
+- **Как пользоваться: [docs/guide.md](docs/guide.md)**
 - План проекта: [docs/plan.md](docs/plan.md)
 - Ядро оценки (подход, трактовки, качество): [docs/core-eval.md](docs/core-eval.md)
 - Спецификация реализации: [docs/implementation.md](docs/implementation.md)
