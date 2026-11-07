@@ -27,7 +27,7 @@ router = APIRouter(tags=["quality"])
 CEILING_FILES = (ROOT / "eval" / "gold_draft.csv", ROOT / "eval" / "gold_opus.csv")
 SPLITS = ("all", "tune", "holdout")
 BY_KEYS = ("language", "channel", "family")
-EXCLUDED_KINDS = ("autotest",)
+EXCLUDED_KINDS = ("autotest", "dry_run", "trainer")   # сравнение моделей: основные прогоны и эксперименты
 # Экран по умолчанию показывает основную оценку, а не эксперименты и пробные прогоны.
 DEFAULT_EXCLUDED_KINDS = ("autotest", "experiment", "dry_run")
 JUDGE_PURPOSES = ("judge", "retry")

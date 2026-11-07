@@ -128,8 +128,8 @@ def test_quality_metrics_on_gold_file(client):
     assert runs[rid]["exact_rate"] == pytest.approx(519 / 520) and runs[rid]["mae"] == 0
     assert runs[rid]["by_criterion"]["08"] == pytest.approx(64 / 65)
     assert runs[rid]["traps"]["08:Да"] == {"recall": 1.0, "precision": pytest.approx(8 / 9)}   # в эталоне 8 × «Да»
-    partial = [r for r in runs.values() if r["kind"] == "dry_run"]
-    assert partial and partial[0]["n"] == 3 and not partial[0]["complete"]
+    # пробные прогоны (10 диалогов) не участвуют в сравнении моделей
+    assert not [r for r in runs.values() if r["kind"] == "dry_run"]
 
 
 def test_quality_errors_and_autotests(client):

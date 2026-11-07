@@ -82,7 +82,7 @@ def create_run(
                 h = _criterion_hash(crit)
                 copied = False
                 if crit.id not in requested and not force:
-                    copied = _copy_previous(con, uid, crit.id, h, profile.model, ev)
+                    copied = _copy_previous(con, uid, crit.id, h, profile_name, ev)
                 if not copied:
                     con.execute(
                         "INSERT INTO criterion_results(evaluation_id, criterion_id, criterion_hash, status) VALUES (?,?,?, 'pending')",
@@ -93,13 +93,26 @@ def create_run(
     return run_id
 
 
-def _copy_previous(con, uid: str, cid: str, h: str, model: str, new_eval_id: int) -> bool:
+def _copy_previous(con, uid: str, cid: str, h: str, profile_name: str, new_eval_id: int) -> bool:
+    """Незапрошенный критерий копируется из текущей оценки диалога (тот же профиль и хэш критерия),
+    иначе — из последней основной оценки этим профилем. Эксперименты и песочницы не источник:
+    иначе «было/стало» показывает ложные изменения (баг: копия бралась из эксперимента той же модели)."""
     row = con.execute(
-        "SELECT cr.* FROM criterion_results cr JOIN evaluations e ON e.id = cr.evaluation_id"
-        " WHERE e.uid=? AND cr.criterion_id=? AND cr.criterion_hash=? AND e.model=? AND cr.status='done'"
-        " ORDER BY cr.id DESC LIMIT 1",
-        (uid, cid, h, model),
+        "SELECT cr.* FROM conversations c JOIN criterion_results cr ON cr.evaluation_id = c.current_evaluation_id"
+        " JOIN evaluations e ON e.id = cr.evaluation_id"
+        " WHERE c.uid=? AND cr.criterion_id=? AND cr.criterion_hash=? AND e.profile=? AND cr.status='done'",
+        (uid, cid, h, profile_name),
     ).fetchone()
+    if row is None:
+        kinds = ",".join("?" * len(SANDBOX_KINDS))
+        row = con.execute(
+            "SELECT cr.* FROM criterion_results cr JOIN evaluations e ON e.id = cr.evaluation_id"
+            " LEFT JOIN runs r ON r.id = e.run_id"
+            f" WHERE e.uid=? AND cr.criterion_id=? AND cr.criterion_hash=? AND e.profile=? AND cr.status='done'"
+            f" AND COALESCE(r.kind, 'batch') NOT IN ({kinds})"
+            " ORDER BY cr.id DESC LIMIT 1",
+            (uid, cid, h, profile_name, *SANDBOX_KINDS),
+        ).fetchone()
     if not row:
         return False
     cols = ["criterion_id", "criterion_hash", "status", "verdict", "category", "evidence_json", "checked_range_json",
