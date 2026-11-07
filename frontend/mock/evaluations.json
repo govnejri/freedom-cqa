@@ -1,0 +1,2072 @@
+{
+ "DEV:p1-ru-001": {
+  "id": 101,
+  "uid": "DEV:p1-ru-001",
+  "run_id": 1,
+  "checklist_version_id": 1,
+  "checklist_version": 1,
+  "profile": "gemini-flash",
+  "model": "gemini-3.8-flash",
+  "prompt_version": "p1-3fa9c2d1",
+  "status": "done",
+  "total": 92.31,
+  "final_total": 100.0,
+  "sections": [
+   {
+    "section_id": "start",
+    "title": "Начало и понимание запроса",
+    "points": 15.38,
+    "max_points": 15.38
+   },
+   {
+    "section_id": "security",
+    "title": "Безопасность и решение",
+    "points": 30.77,
+    "max_points": 30.77
+   },
+   {
+    "section_id": "conduct",
+    "title": "Ведение и завершение диалога",
+    "points": 53.85,
+    "max_points": 53.85
+   },
+   {
+    "section_id": "gross",
+    "title": "Грубые нарушения",
+    "points": 0.0,
+    "max_points": 0.0
+   }
+  ],
+  "original_sections": [
+   {
+    "section_id": "start",
+    "title": "Начало и понимание запроса",
+    "points": 15.38,
+    "max_points": 15.38
+   },
+   {
+    "section_id": "security",
+    "title": "Безопасность и решение",
+    "points": 30.77,
+    "max_points": 30.77
+   },
+   {
+    "section_id": "conduct",
+    "title": "Ведение и завершение диалога",
+    "points": 46.15,
+    "max_points": 53.85
+   },
+   {
+    "section_id": "gross",
+    "title": "Грубые нарушения",
+    "points": 0.0,
+    "max_points": 0.0
+   }
+  ],
+  "gross": false,
+  "gross_categories": [],
+  "needs_review": false,
+  "criteria": [
+   {
+    "id": 1011,
+    "criterion_id": "01",
+    "title": "Установление контакта",
+    "section": "start",
+    "type": "yes_no",
+    "weight": 10.0,
+    "verdict": "Да",
+    "final_verdict": "Да",
+    "category": "",
+    "score": {
+     "criterion_id": "01",
+     "verdict": "Да",
+     "applicable": true,
+     "weight": 10.0,
+     "effective_weight": 15.3846,
+     "raw_points": 10.0,
+     "points": 15.3846,
+     "max_points": 15.3846
+    },
+    "evidence": [
+     {
+      "id": "m10",
+      "quote": "Здравствуйте! Меня зовут Алина.",
+      "ok": true,
+      "repaired": false
+     }
+    ],
+    "checked_range": null,
+    "explanation": "Установление контакта — Да. В первом ответе оператор поздоровался и назвал имя. Основание — m10.",
+    "reasoning": "Первая реплика оператора — m10: «Здравствуйте! Меня зовут Алина». Приветствие бота (m2) не учитывается.",
+    "how_to_fix": "",
+    "needs_review": false,
+    "second_opinion": null,
+    "status": "done",
+    "error": null,
+    "appeal_id": null,
+    "appeal_status": null
+   },
+   {
+    "id": 1012,
+    "criterion_id": "02",
+    "title": "Выявление потребности",
+    "section": "start",
+    "type": "yes_no",
+    "weight": 15.0,
+    "verdict": "N/A",
+    "final_verdict": "N/A",
+    "category": "",
+    "score": {
+     "criterion_id": "02",
+     "verdict": "N/A",
+     "applicable": false,
+     "weight": 15.0,
+     "effective_weight": 0.0,
+     "raw_points": 0.0,
+     "points": 0.0,
+     "max_points": 0.0
+    },
+    "evidence": [
+     {
+      "id": "m5",
+      "quote": "Я сейчас с ноутбука, отчёт качать не хочу.",
+      "ok": true,
+      "repaired": false
+     },
+     {
+      "id": "m10",
+      "quote": "В веб-версии откройте вкладку «Кабинет».",
+      "ok": true,
+      "repaired": false
+     }
+    ],
+    "checked_range": null,
+    "explanation": "Выявление потребности — N/A. Клиент сразу сообщил, что сидит с ноутбука и не хочет скачивать отчёт; данных хватало, оператор ответил без уточнений. Основание — m5, m10.",
+    "reasoning": "Всё нужное клиент сообщил боту (m1, m5). Оператор учёл ноутбук и отказ от отчёта, переспрашивать было нечего.",
+    "how_to_fix": "",
+    "needs_review": false,
+    "second_opinion": null,
+    "status": "done",
+    "error": null,
+    "appeal_id": null,
+    "appeal_status": null
+   },
+   {
+    "id": 1013,
+    "criterion_id": "03",
+    "title": "Идентификация",
+    "section": "security",
+    "type": "yes_no",
+    "weight": 20.0,
+    "verdict": "N/A",
+    "final_verdict": "N/A",
+    "category": "",
+    "score": {
+     "criterion_id": "03",
+     "verdict": "N/A",
+     "applicable": false,
+     "weight": 20.0,
+     "effective_weight": 0.0,
+     "raw_points": 0.0,
+     "points": 0.0,
+     "max_points": 0.0
+    },
+    "evidence": [
+     {
+      "id": "m1",
+      "quote": "Где посмотреть мой тариф?",
+      "ok": true,
+      "repaired": false
+     }
+    ],
+    "checked_range": null,
+    "explanation": "Идентификация — N/A. Вопрос о том, где в интерфейсе виден тариф; данные счёта не раскрывались, действий по счёту не было. Основание — m1.",
+    "reasoning": "Оператор назвал только путь в интерфейсе, конкретный тариф клиента не сообщал.",
+    "how_to_fix": "",
+    "needs_review": false,
+    "second_opinion": null,
+    "status": "done",
+    "error": null,
+    "appeal_id": null,
+    "appeal_status": null
+   },
+   {
+    "id": 1014,
+    "criterion_id": "04",
+    "title": "Корректная и полная консультация",
+    "section": "security",
+    "type": "scale",
+    "weight": 20.0,
+    "verdict": "20",
+    "final_verdict": "20",
+    "category": "",
+    "score": {
+     "criterion_id": "04",
+     "verdict": "20",
+     "applicable": true,
+     "weight": 20.0,
+     "effective_weight": 30.7692,
+     "raw_points": 20.0,
+     "points": 30.7692,
+     "max_points": 30.7692
+    },
+    "evidence": [
+     {
+      "id": "m10",
+      "quote": "Название тарифа будет под вашим ФИО.",
+      "ok": true,
+      "repaired": false
+     },
+     {
+      "id": "m11",
+      "quote": "Нашла, спасибо.",
+      "ok": true,
+      "repaired": false
+     }
+    ],
+    "checked_range": null,
+    "explanation": "Корректная и полная консультация — 20. Дан точный путь в веб-версии, клиент подтвердил, что нашла тариф. Основание — m10, m11.",
+    "reasoning": "Единственный вопрос — где тариф. Ответ точный, клиент подтвердил результат.",
+    "how_to_fix": "",
+    "needs_review": false,
+    "second_opinion": null,
+    "status": "done",
+    "error": null,
+    "appeal_id": null,
+    "appeal_status": null
+   },
+   {
+    "id": 1015,
+    "criterion_id": "05",
+    "title": "Эмпатия и клиентоориентированность",
+    "section": "conduct",
+    "type": "yes_no",
+    "weight": 15.0,
+    "verdict": "Да",
+    "final_verdict": "Да",
+    "category": "",
+    "score": {
+     "criterion_id": "05",
+     "verdict": "Да",
+     "applicable": true,
+     "weight": 15.0,
+     "effective_weight": 23.0769,
+     "raw_points": 15.0,
+     "points": 23.0769,
+     "max_points": 23.0769
+    },
+    "evidence": [
+     {
+      "id": "m5",
+      "quote": "отчёт качать не хочу",
+      "ok": true,
+      "repaired": false
+     },
+     {
+      "id": "m10",
+      "quote": "В веб-версии откройте вкладку «Кабинет».",
+      "ok": true,
+      "repaired": false
+     }
+    ],
+    "checked_range": null,
+    "explanation": "Эмпатия — Да. Тон вежливый; оператор учёл, что клиент не хочет скачивать отчёт, и дал путь без него. Основание — m5, m10.",
+    "reasoning": "Неудобство клиента (не хочет качать отчёт) решено по существу.",
+    "how_to_fix": "",
+    "needs_review": false,
+    "second_opinion": null,
+    "status": "done",
+    "error": null,
+    "appeal_id": null,
+    "appeal_status": null
+   },
+   {
+    "id": 1016,
+    "criterion_id": "06",
+    "title": "Управление диалогом, скорость и грамотность",
+    "section": "conduct",
+    "type": "scale",
+    "weight": 15.0,
+    "verdict": "10",
+    "final_verdict": "10",
+    "category": "",
+    "score": {
+     "criterion_id": "06",
+     "verdict": "10",
+     "applicable": true,
+     "weight": 15.0,
+     "effective_weight": 23.0769,
+     "raw_points": 15.0,
+     "points": 23.0769,
+     "max_points": 23.0769
+    },
+    "evidence": [
+     {
+      "id": "m10",
+      "quote": "В веб-версии откройте вкладку «Кабинет». Название тарифа будет под вашим ФИО.",
+      "ok": true,
+      "repaired": false
+     }
+    ],
+    "checked_range": null,
+    "explanation": "Управление диалогом — 10. Один ясный ответ, ожиданий без предупреждения не было. Основание — m10.",
+    "reasoning": "Пауз больше 60 с после подключения нет. Ответ однозначный.",
+    "how_to_fix": "",
+    "needs_review": false,
+    "second_opinion": null,
+    "status": "done",
+    "error": null,
+    "appeal_id": null,
+    "appeal_status": null
+   },
+   {
+    "id": 1017,
+    "criterion_id": "07",
+    "title": "Завершение",
+    "section": "conduct",
+    "type": "yes_no",
+    "weight": 5.0,
+    "verdict": "Нет",
+    "final_verdict": "Да",
+    "category": "",
+    "score": {
+     "criterion_id": "07",
+     "verdict": "Да",
+     "applicable": true,
+     "weight": 5.0,
+     "effective_weight": 7.6923,
+     "raw_points": 5.0,
+     "points": 7.6923,
+     "max_points": 7.6923
+    },
+    "evidence": [
+     {
+      "id": "m12",
+      "quote": "Пожалуйста. Хорошего вечера!",
+      "ok": true,
+      "repaired": false
+     }
+    ],
+    "checked_range": [
+     "m11",
+     "m12"
+    ],
+    "explanation": "Завершение — Нет. Оператор попрощался, но не подвёл итог и не предложил дальнейшую помощь. Основание — m12.",
+    "reasoning": "Последняя реплика оператора — короткое прощание. Итога и предложения помощи на участке m11–m12 нет.",
+    "how_to_fix": "Пожалуйста! Рада, что получилось. Если появятся вопросы по тарифу — пишите, поможем. Хорошего вечера!",
+    "needs_review": false,
+    "second_opinion": null,
+    "status": "done",
+    "error": null,
+    "appeal_id": 1,
+    "appeal_status": "decided"
+   },
+   {
+    "id": 1018,
+    "criterion_id": "08",
+    "title": "Грубые ошибки",
+    "section": "gross",
+    "type": "flag",
+    "weight": 0.0,
+    "verdict": "Нет",
+    "final_verdict": "Нет",
+    "category": "",
+    "score": {
+     "criterion_id": "08",
+     "verdict": "Нет",
+     "applicable": true,
+     "weight": 0.0,
+     "effective_weight": 0.0,
+     "raw_points": 0.0,
+     "points": 0.0,
+     "max_points": 0.0
+    },
+    "evidence": [
+     {
+      "id": "m10",
+      "quote": "Здравствуйте! Меня зовут Алина.",
+      "ok": true,
+      "repaired": false
+     }
+    ],
+    "checked_range": null,
+    "explanation": "Грубые ошибки — Нет. Оскорблений, предложений услуг в обход компании и раскрытия конфиденциальных данных нет.",
+    "reasoning": "Проверены все реплики оператора (m10, m12): нарушений нет.",
+    "how_to_fix": "",
+    "needs_review": false,
+    "second_opinion": null,
+    "status": "done",
+    "error": null,
+    "appeal_id": null,
+    "appeal_status": null
+   }
+  ],
+  "cost_usd": 0.009,
+  "latency_ms": 5130,
+  "n_llm_calls": 8,
+  "created_at": "2026-11-07T19:12:10Z"
+ },
+ "DEV:p1-ru-022": {
+  "id": 102,
+  "uid": "DEV:p1-ru-022",
+  "run_id": 1,
+  "checklist_version_id": 1,
+  "checklist_version": 1,
+  "profile": "gemini-flash",
+  "model": "gemini-3.8-flash",
+  "prompt_version": "p1-3fa9c2d1",
+  "status": "done",
+  "total": 31.25,
+  "final_total": 31.25,
+  "sections": [
+   {
+    "section_id": "start",
+    "title": "Начало и понимание запроса",
+    "points": 12.5,
+    "max_points": 31.25
+   },
+   {
+    "section_id": "security",
+    "title": "Безопасность и решение",
+    "points": 0.0,
+    "max_points": 25.0
+   },
+   {
+    "section_id": "conduct",
+    "title": "Ведение и завершение диалога",
+    "points": 18.75,
+    "max_points": 43.75
+   },
+   {
+    "section_id": "gross",
+    "title": "Грубые нарушения",
+    "points": 0.0,
+    "max_points": 0.0
+   }
+  ],
+  "original_sections": [
+   {
+    "section_id": "start",
+    "title": "Начало и понимание запроса",
+    "points": 12.5,
+    "max_points": 31.25
+   },
+   {
+    "section_id": "security",
+    "title": "Безопасность и решение",
+    "points": 0.0,
+    "max_points": 25.0
+   },
+   {
+    "section_id": "conduct",
+    "title": "Ведение и завершение диалога",
+    "points": 18.75,
+    "max_points": 43.75
+   },
+   {
+    "section_id": "gross",
+    "title": "Грубые нарушения",
+    "points": 0.0,
+    "max_points": 0.0
+   }
+  ],
+  "gross": true,
+  "gross_categories": [
+   "обход компании"
+  ],
+  "needs_review": false,
+  "criteria": [
+   {
+    "id": 1021,
+    "criterion_id": "01",
+    "title": "Установление контакта",
+    "section": "start",
+    "type": "yes_no",
+    "weight": 10.0,
+    "verdict": "Да",
+    "final_verdict": "Да",
+    "category": "",
+    "score": {
+     "criterion_id": "01",
+     "verdict": "Да",
+     "applicable": true,
+     "weight": 10.0,
+     "effective_weight": 12.5,
+     "raw_points": 10.0,
+     "points": 12.5,
+     "max_points": 12.5
+    },
+    "evidence": [
+     {
+      "id": "m10",
+      "quote": "Здравствуйте, я Кирилл.",
+      "ok": true,
+      "repaired": false
+     }
+    ],
+    "checked_range": null,
+    "explanation": "Установление контакта — Да. Оператор поздоровался и назвал имя в первом ответе. Основание — m10.",
+    "reasoning": "m10 начинается с «Здравствуйте, я Кирилл».",
+    "how_to_fix": "",
+    "needs_review": false,
+    "second_opinion": null,
+    "status": "done",
+    "error": null,
+    "appeal_id": null,
+    "appeal_status": null
+   },
+   {
+    "id": 1022,
+    "criterion_id": "02",
+    "title": "Выявление потребности",
+    "section": "start",
+    "type": "yes_no",
+    "weight": 15.0,
+    "verdict": "Нет",
+    "final_verdict": "Нет",
+    "category": "",
+    "score": {
+     "criterion_id": "02",
+     "verdict": "Нет",
+     "applicable": true,
+     "weight": 15.0,
+     "effective_weight": 18.75,
+     "raw_points": 0.0,
+     "points": 0.0,
+     "max_points": 18.75
+    },
+    "evidence": [
+     {
+      "id": "m10",
+      "quote": "Скиньте деньги мне на карту, я сам их вложу с выгодой.",
+      "ok": true,
+      "repaired": false
+     },
+     {
+      "id": "m11",
+      "quote": "Я про консультацию в приложении спрашивал.",
+      "ok": true,
+      "repaired": false
+     }
+    ],
+    "checked_range": [
+     "m10",
+     "m12"
+    ],
+    "explanation": "Выявление потребности — Нет. Клиент просил помочь с выбором облигаций, оператор не выяснил запрос и проигнорировал уточнение клиента. Основание — m10, m11.",
+    "reasoning": "Клиент сформулировал запрос боту (m1). Оператор подменил потребность и не вернулся к ней после m11.",
+    "how_to_fix": "Подскажите, пожалуйста, на какой срок и с какой целью планируете вложение? Покажу, как подобрать облигации в приложении.",
+    "needs_review": false,
+    "second_opinion": null,
+    "status": "done",
+    "error": null,
+    "appeal_id": null,
+    "appeal_status": null
+   },
+   {
+    "id": 1023,
+    "criterion_id": "03",
+    "title": "Идентификация",
+    "section": "security",
+    "type": "yes_no",
+    "weight": 20.0,
+    "verdict": "N/A",
+    "final_verdict": "N/A",
+    "category": "",
+    "score": {
+     "criterion_id": "03",
+     "verdict": "N/A",
+     "applicable": false,
+     "weight": 20.0,
+     "effective_weight": 0.0,
+     "raw_points": 0.0,
+     "points": 0.0,
+     "max_points": 0.0
+    },
+    "evidence": [],
+    "checked_range": null,
+    "explanation": "Идентификация — N/A. Данные конкретного счёта не запрашивались и не раскрывались, действий по счёту не было.",
+    "reasoning": "В диалоге нет раскрытия данных счёта.",
+    "how_to_fix": "",
+    "needs_review": false,
+    "second_opinion": null,
+    "status": "done",
+    "error": null,
+    "appeal_id": null,
+    "appeal_status": null
+   },
+   {
+    "id": 1024,
+    "criterion_id": "04",
+    "title": "Корректная и полная консультация",
+    "section": "security",
+    "type": "scale",
+    "weight": 20.0,
+    "verdict": "0",
+    "final_verdict": "0",
+    "category": "",
+    "score": {
+     "criterion_id": "04",
+     "verdict": "0",
+     "applicable": true,
+     "weight": 20.0,
+     "effective_weight": 25.0,
+     "raw_points": 0.0,
+     "points": 0.0,
+     "max_points": 25.0
+    },
+    "evidence": [
+     {
+      "id": "m10",
+      "quote": "Скиньте деньги мне на карту",
+      "ok": true,
+      "repaired": false
+     },
+     {
+      "id": "m12",
+      "quote": "через компанию оформлять не надо",
+      "ok": true,
+      "repaired": false
+     }
+    ],
+    "checked_range": null,
+    "explanation": "Корректная и полная консультация — 0. Вместо ответа о выборе облигаций — предложение перевести деньги лично оператору; ответа по существу нет. Основание — m10, m12.",
+    "reasoning": "Вопрос о выборе облигаций остался без ответа.",
+    "how_to_fix": "В приложении откройте раздел «Облигации»: фильтры по сроку погашения и доходности помогут выбрать бумаги. Индивидуальные рекомендации даёт персональный менеджер — могу передать ему ваш запрос.",
+    "needs_review": false,
+    "second_opinion": null,
+    "status": "done",
+    "error": null,
+    "appeal_id": null,
+    "appeal_status": null
+   },
+   {
+    "id": 1025,
+    "criterion_id": "05",
+    "title": "Эмпатия и клиентоориентированность",
+    "section": "conduct",
+    "type": "yes_no",
+    "weight": 15.0,
+    "verdict": "Нет",
+    "final_verdict": "Нет",
+    "category": "",
+    "score": {
+     "criterion_id": "05",
+     "verdict": "Нет",
+     "applicable": true,
+     "weight": 15.0,
+     "effective_weight": 18.75,
+     "raw_points": 0.0,
+     "points": 0.0,
+     "max_points": 18.75
+    },
+    "evidence": [
+     {
+      "id": "m11",
+      "quote": "Вы серьёзно?",
+      "ok": true,
+      "repaired": false
+     },
+     {
+      "id": "m12",
+      "quote": "Да, это я лично предлагаю",
+      "ok": true,
+      "repaired": false
+     }
+    ],
+    "checked_range": null,
+    "explanation": "Эмпатия и клиентоориентированность — Нет. Клиент выразил недоумение, оператор настаивал на личной схеме и не отреагировал на проблему. Основание — m11, m12.",
+    "reasoning": "Реакция на недоумение клиента — повтор предложения.",
+    "how_to_fix": "Извините за путаницу. Давайте вернёмся к вашему вопросу: покажу, где в приложении выбрать облигации.",
+    "needs_review": false,
+    "second_opinion": null,
+    "status": "done",
+    "error": null,
+    "appeal_id": null,
+    "appeal_status": null
+   },
+   {
+    "id": 1026,
+    "criterion_id": "06",
+    "title": "Управление диалогом, скорость и грамотность",
+    "section": "conduct",
+    "type": "scale",
+    "weight": 15.0,
+    "verdict": "10",
+    "final_verdict": "10",
+    "category": "",
+    "score": {
+     "criterion_id": "06",
+     "verdict": "10",
+     "applicable": true,
+     "weight": 15.0,
+     "effective_weight": 18.75,
+     "raw_points": 15.0,
+     "points": 18.75,
+     "max_points": 18.75
+    },
+    "evidence": [
+     {
+      "id": "m12",
+      "quote": "Да, это я лично предлагаю, через компанию оформлять не надо.",
+      "ok": true,
+      "repaired": false
+     }
+    ],
+    "checked_range": null,
+    "explanation": "Управление диалогом — 10. Реплики оператора понятны и связны; неэтичность учтена в 08, отсутствие ответа — в 04. Основание — m10, m12.",
+    "reasoning": "Принцип «одно нарушение — один критерий»: формулировки ясные.",
+    "how_to_fix": "",
+    "needs_review": false,
+    "second_opinion": null,
+    "status": "done",
+    "error": null,
+    "appeal_id": null,
+    "appeal_status": null
+   },
+   {
+    "id": 1027,
+    "criterion_id": "07",
+    "title": "Завершение",
+    "section": "conduct",
+    "type": "yes_no",
+    "weight": 5.0,
+    "verdict": "Нет",
+    "final_verdict": "Нет",
+    "category": "",
+    "score": {
+     "criterion_id": "07",
+     "verdict": "Нет",
+     "applicable": true,
+     "weight": 5.0,
+     "effective_weight": 6.25,
+     "raw_points": 0.0,
+     "points": 0.0,
+     "max_points": 6.25
+    },
+    "evidence": [
+     {
+      "id": "m13",
+      "quote": "Нет, спасибо.",
+      "ok": true,
+      "repaired": false
+     },
+     {
+      "id": "m14",
+      "quote": "Оператор закрыл чат.",
+      "ok": true,
+      "repaired": false
+     }
+    ],
+    "checked_range": [
+     "m13",
+     "m14"
+    ],
+    "explanation": "Завершение — Нет. После отказа клиента оператор закрыл чат без прощания. Основание — m13, m14.",
+    "reasoning": "Последнее событие — «Оператор закрыл чат», прощания оператора нет.",
+    "how_to_fix": "Понимаю. Если захотите разобраться с облигациями в приложении — напишите, помогу. Хорошего дня!",
+    "needs_review": false,
+    "second_opinion": null,
+    "status": "done",
+    "error": null,
+    "appeal_id": null,
+    "appeal_status": null
+   },
+   {
+    "id": 1028,
+    "criterion_id": "08",
+    "title": "Грубые ошибки",
+    "section": "gross",
+    "type": "flag",
+    "weight": 0.0,
+    "verdict": "Да",
+    "final_verdict": "Да",
+    "category": "обход компании",
+    "score": {
+     "criterion_id": "08",
+     "verdict": "Да",
+     "applicable": true,
+     "weight": 0.0,
+     "effective_weight": 0.0,
+     "raw_points": 0.0,
+     "points": 0.0,
+     "max_points": 0.0
+    },
+    "evidence": [
+     {
+      "id": "m10",
+      "quote": "Скиньте деньги мне на карту, я сам их вложу с выгодой.",
+      "ok": true,
+      "repaired": false
+     },
+     {
+      "id": "m12",
+      "quote": "через компанию оформлять не надо",
+      "ok": true,
+      "repaired": false
+     }
+    ],
+    "checked_range": null,
+    "explanation": "Грубые ошибки — Да (обход компании). Оператор предложил перевести деньги ему лично для инвестирования в обход компании. Основание — m10, m12.",
+    "reasoning": "Достаточно самого предложения, согласие клиента не требуется.",
+    "how_to_fix": "Инвестировать можно только через ваш счёт в Freedom Broker. Покажу, как выбрать облигации в приложении.",
+    "needs_review": false,
+    "second_opinion": null,
+    "status": "done",
+    "error": null,
+    "appeal_id": null,
+    "appeal_status": null
+   }
+  ],
+  "cost_usd": 0.0091,
+  "latency_ms": 5285,
+  "n_llm_calls": 8,
+  "created_at": "2026-11-07T19:12:17Z"
+ },
+ "DEV:p1-kz-015": {
+  "id": 103,
+  "uid": "DEV:p1-kz-015",
+  "run_id": 1,
+  "checklist_version_id": 1,
+  "checklist_version": 1,
+  "profile": "gemini-flash",
+  "model": "gemini-3.8-flash",
+  "prompt_version": "p1-3fa9c2d1",
+  "status": "done",
+  "total": 30.0,
+  "final_total": 30.0,
+  "sections": [
+   {
+    "section_id": "start",
+    "title": "Начало и понимание запроса",
+    "points": 11.76,
+    "max_points": 11.76
+   },
+   {
+    "section_id": "security",
+    "title": "Безопасность и решение",
+    "points": 5.88,
+    "max_points": 47.06
+   },
+   {
+    "section_id": "conduct",
+    "title": "Ведение и завершение диалога",
+    "points": 12.35,
+    "max_points": 41.18
+   },
+   {
+    "section_id": "gross",
+    "title": "Грубые нарушения",
+    "points": 0.0,
+    "max_points": 0.0
+   }
+  ],
+  "original_sections": [
+   {
+    "section_id": "start",
+    "title": "Начало и понимание запроса",
+    "points": 11.76,
+    "max_points": 11.76
+   },
+   {
+    "section_id": "security",
+    "title": "Безопасность и решение",
+    "points": 5.88,
+    "max_points": 47.06
+   },
+   {
+    "section_id": "conduct",
+    "title": "Ведение и завершение диалога",
+    "points": 12.35,
+    "max_points": 41.18
+   },
+   {
+    "section_id": "gross",
+    "title": "Грубые нарушения",
+    "points": 0.0,
+    "max_points": 0.0
+   }
+  ],
+  "gross": true,
+  "gross_categories": [
+   "раскрытие данных"
+  ],
+  "needs_review": true,
+  "criteria": [
+   {
+    "id": 1031,
+    "criterion_id": "01",
+    "title": "Установление контакта",
+    "section": "start",
+    "type": "yes_no",
+    "weight": 10.0,
+    "verdict": "Да",
+    "final_verdict": "Да",
+    "category": "",
+    "score": {
+     "criterion_id": "01",
+     "verdict": "Да",
+     "applicable": true,
+     "weight": 10.0,
+     "effective_weight": 11.7647,
+     "raw_points": 10.0,
+     "points": 11.7647,
+     "max_points": 11.7647
+    },
+    "evidence": [
+     {
+      "id": "m10",
+      "quote": "Сәлеметсіз бе, мен Мұратпын.",
+      "ok": true,
+      "repaired": false
+     }
+    ],
+    "checked_range": null,
+    "explanation": "Установление контакта — Да. Оператор поздоровался на казахском и назвал имя в первом ответе. Основание — m10.",
+    "reasoning": "«Сәлеметсіз бе, мен Мұратпын» — приветствие и имя на языке клиента.",
+    "how_to_fix": "",
+    "needs_review": false,
+    "second_opinion": null,
+    "status": "done",
+    "error": null,
+    "appeal_id": null,
+    "appeal_status": null
+   },
+   {
+    "id": 1032,
+    "criterion_id": "02",
+    "title": "Выявление потребности",
+    "section": "start",
+    "type": "yes_no",
+    "weight": 15.0,
+    "verdict": "N/A",
+    "final_verdict": "N/A",
+    "category": "",
+    "score": {
+     "criterion_id": "02",
+     "verdict": "N/A",
+     "applicable": false,
+     "weight": 15.0,
+     "effective_weight": 0.0,
+     "raw_points": 0.0,
+     "points": 0.0,
+     "max_points": 0.0
+    },
+    "evidence": [
+     {
+      "id": "m1",
+      "quote": "Менің шотымда неге ақша шығару жабық екенін қарап беріңізші.",
+      "ok": true,
+      "repaired": false
+     }
+    ],
+    "checked_range": null,
+    "explanation": "Выявление потребности — N/A. Клиент сразу сформулировал запрос — почему закрыт вывод; данных для ответа хватало. Основание — m1, m10.",
+    "reasoning": "Кроме идентификации (критерий 03), уточнять было нечего.",
+    "how_to_fix": "",
+    "needs_review": false,
+    "second_opinion": null,
+    "status": "done",
+    "error": null,
+    "appeal_id": null,
+    "appeal_status": null
+   },
+   {
+    "id": 1033,
+    "criterion_id": "03",
+    "title": "Идентификация",
+    "section": "security",
+    "type": "yes_no",
+    "weight": 20.0,
+    "verdict": "Нет",
+    "final_verdict": "Нет",
+    "category": "",
+    "score": {
+     "criterion_id": "03",
+     "verdict": "Нет",
+     "applicable": true,
+     "weight": 20.0,
+     "effective_weight": 23.5294,
+     "raw_points": 0.0,
+     "points": 0.0,
+     "max_points": 23.5294
+    },
+    "evidence": [
+     {
+      "id": "m10",
+      "quote": "Сіздің шотыңызда ақша шығаруға шектеу қойылғанын көріп тұрмын.",
+      "ok": true,
+      "repaired": false
+     },
+     {
+      "id": "m11",
+      "quote": "Мен әлі жеке басымды растаған жоқпын ғой.",
+      "ok": true,
+      "repaired": false
+     },
+     {
+      "id": "m12",
+      "quote": "Қазір растаудың қажеті жоқ.",
+      "ok": true,
+      "repaired": false
+     }
+    ],
+    "checked_range": [
+     "m1",
+     "m12"
+    ],
+    "explanation": "Идентификация — Нет. Оператор раскрыл ограничение на счёте без подтверждения личности и отклонил возражение клиента. Основание — m10, m11, m12.",
+    "reasoning": "Системного сообщения о подтверждении личности на участке m1–m12 нет; данные счёта раскрыты в m10.",
+    "how_to_fix": "Шотыңызды тексеру үшін алдымен жеке басыңызды растау қажет. Растау сілтемесін жіберейін бе?",
+    "needs_review": false,
+    "second_opinion": null,
+    "status": "done",
+    "error": null,
+    "appeal_id": null,
+    "appeal_status": null
+   },
+   {
+    "id": 1034,
+    "criterion_id": "04",
+    "title": "Корректная и полная консультация",
+    "section": "security",
+    "type": "scale",
+    "weight": 20.0,
+    "verdict": "5",
+    "final_verdict": "5",
+    "category": "",
+    "score": {
+     "criterion_id": "04",
+     "verdict": "5",
+     "applicable": true,
+     "weight": 20.0,
+     "effective_weight": 23.5294,
+     "raw_points": 5.0,
+     "points": 5.8824,
+     "max_points": 23.5294
+    },
+    "evidence": [
+     {
+      "id": "m13",
+      "quote": "Ал себебі қандай?",
+      "ok": true,
+      "repaired": false
+     },
+     {
+      "id": "m14",
+      "quote": "Оны тексеруге жіберемін.",
+      "ok": true,
+      "repaired": false
+     }
+    ],
+    "checked_range": null,
+    "explanation": "Корректная и полная консультация — 5. Сообщён только факт ограничения; причина не названа, «отправлю на проверку» — без срока и канала ответа. Основание — m10, m13, m14.",
+    "reasoning": "Главный вопрос клиента — причина ограничения — остался открытым.",
+    "how_to_fix": "Шектеу себебін анықтау үшін сұранысты тексеруге жібердім, жауап 1 жұмыс күні ішінде қосымшадағы чатқа келеді.",
+    "needs_review": false,
+    "second_opinion": null,
+    "status": "done",
+    "error": null,
+    "appeal_id": null,
+    "appeal_status": null
+   },
+   {
+    "id": 1035,
+    "criterion_id": "05",
+    "title": "Эмпатия и клиентоориентированность",
+    "section": "conduct",
+    "type": "yes_no",
+    "weight": 15.0,
+    "verdict": "Нет",
+    "final_verdict": "Нет",
+    "category": "",
+    "score": {
+     "criterion_id": "05",
+     "verdict": "Нет",
+     "applicable": true,
+     "weight": 15.0,
+     "effective_weight": 17.6471,
+     "raw_points": 0.0,
+     "points": 0.0,
+     "max_points": 17.6471
+    },
+    "evidence": [
+     {
+      "id": "m11",
+      "quote": "Мен әлі жеке басымды растаған жоқпын ғой.",
+      "ok": true,
+      "repaired": false
+     },
+     {
+      "id": "m12",
+      "quote": "Қазір растаудың қажеті жоқ.",
+      "ok": true,
+      "repaired": false
+     }
+    ],
+    "checked_range": null,
+    "explanation": "Эмпатия и клиентоориентированность — Нет. Обоснованное возражение клиента о непройденной проверке отклонено без реакции. Основание — m11, m12.",
+    "reasoning": "Отписка на возражение клиента — «Нет» по трактовке критерия.",
+    "how_to_fix": "Дұрыс айтасыз, кешіріңіз. Алдымен жеке басыңызды растайық, содан кейін шектеу себебін айтамын.",
+    "needs_review": false,
+    "second_opinion": null,
+    "status": "done",
+    "error": null,
+    "appeal_id": null,
+    "appeal_status": null
+   },
+   {
+    "id": 1036,
+    "criterion_id": "06",
+    "title": "Управление диалогом, скорость и грамотность",
+    "section": "conduct",
+    "type": "scale",
+    "weight": 15.0,
+    "verdict": "7",
+    "final_verdict": "7",
+    "category": "",
+    "score": {
+     "criterion_id": "06",
+     "verdict": "7",
+     "applicable": true,
+     "weight": 15.0,
+     "effective_weight": 17.6471,
+     "raw_points": 10.5,
+     "points": 12.3529,
+     "max_points": 17.6471
+    },
+    "evidence": [
+     {
+      "id": "m13",
+      "quote": "Ал себебі қандай?",
+      "ok": true,
+      "repaired": false
+     }
+    ],
+    "checked_range": null,
+    "explanation": "Управление диалогом — 7. Клиенту пришлось отдельно спрашивать о причине; реплики короткие, но понятные. Основание — m12, m13.",
+    "reasoning": "Один заметный сбой: причина не названа сразу.",
+    "how_to_fix": "Шектеу себебін бірден түсіндіріп, келесі қадамды атаңыз.",
+    "needs_review": false,
+    "second_opinion": null,
+    "status": "done",
+    "error": null,
+    "appeal_id": null,
+    "appeal_status": null
+   },
+   {
+    "id": 1037,
+    "criterion_id": "07",
+    "title": "Завершение",
+    "section": "conduct",
+    "type": "yes_no",
+    "weight": 5.0,
+    "verdict": "Нет",
+    "final_verdict": "Нет",
+    "category": "",
+    "score": {
+     "criterion_id": "07",
+     "verdict": "Нет",
+     "applicable": true,
+     "weight": 5.0,
+     "effective_weight": 5.8824,
+     "raw_points": 0.0,
+     "points": 0.0,
+     "max_points": 5.8824
+    },
+    "evidence": [
+     {
+      "id": "m14",
+      "quote": "Оны тексеруге жіберемін. Сау болыңыз.",
+      "ok": true,
+      "repaired": false
+     }
+    ],
+    "checked_range": [
+     "m13",
+     "m14"
+    ],
+    "explanation": "Завершение — Нет. Прощание оборвало незакрытый вопрос клиента о причине ограничения (Т1б). Основание — m13, m14.",
+    "reasoning": "Вопрос в m13 не закрыт, оператор сразу попрощался.",
+    "how_to_fix": "Сұранысыңызды тексеруге жібердім, жауапты осы чатқа жазамыз. Тағы сұрақтарыңыз болса, жазыңыз. Сау болыңыз!",
+    "needs_review": false,
+    "second_opinion": null,
+    "status": "done",
+    "error": null,
+    "appeal_id": null,
+    "appeal_status": null
+   },
+   {
+    "id": 1038,
+    "criterion_id": "08",
+    "title": "Грубые ошибки",
+    "section": "gross",
+    "type": "flag",
+    "weight": 0.0,
+    "verdict": "Да",
+    "final_verdict": "Да",
+    "category": "раскрытие данных",
+    "score": {
+     "criterion_id": "08",
+     "verdict": "Да",
+     "applicable": true,
+     "weight": 0.0,
+     "effective_weight": 0.0,
+     "raw_points": 0.0,
+     "points": 0.0,
+     "max_points": 0.0
+    },
+    "evidence": [
+     {
+      "id": "m10",
+      "quote": "Сіздің шотыңызда ақша шығаруға шектеу қойылғанын көріп тұрмын.",
+      "ok": true,
+      "repaired": false
+     }
+    ],
+    "checked_range": null,
+    "explanation": "Грубые ошибки — Да (раскрытие данных). Оператор сообщил ограничение на конкретном счёте до подтверждения личности (Т3). Основание — m10, m11.",
+    "reasoning": "Раскрытие данных счёта без идентификации — и 03 «Нет», и 08 «Да».",
+    "how_to_fix": "",
+    "needs_review": true,
+    "second_opinion": {
+     "profile": "gemini-argon",
+     "model": "gemini-4-argon",
+     "verdict": "Нет",
+     "explanation": "Факт ограничения на вывод — общий статус без конкретных сумм и операций; это 03 «Нет», но не грубое раскрытие."
+    },
+    "status": "done",
+    "error": null,
+    "appeal_id": null,
+    "appeal_status": null
+   }
+  ],
+  "cost_usd": 0.0102,
+  "latency_ms": 5285,
+  "n_llm_calls": 9,
+  "created_at": "2026-11-07T19:12:24Z"
+ },
+ "DEV:p1-ru-025": {
+  "id": 104,
+  "uid": "DEV:p1-ru-025",
+  "run_id": 1,
+  "checklist_version_id": 1,
+  "checklist_version": 1,
+  "profile": "gemini-flash",
+  "model": "gemini-3.8-flash",
+  "prompt_version": "p1-3fa9c2d1",
+  "status": "done",
+  "total": 100.0,
+  "final_total": 100.0,
+  "sections": [
+   {
+    "section_id": "start",
+    "title": "Начало и понимание запроса",
+    "points": 45.45,
+    "max_points": 45.45
+   },
+   {
+    "section_id": "security",
+    "title": "Безопасность и решение",
+    "points": 0.0,
+    "max_points": 0.0
+   },
+   {
+    "section_id": "conduct",
+    "title": "Ведение и завершение диалога",
+    "points": 54.55,
+    "max_points": 54.55
+   },
+   {
+    "section_id": "gross",
+    "title": "Грубые нарушения",
+    "points": 0.0,
+    "max_points": 0.0
+   }
+  ],
+  "original_sections": [
+   {
+    "section_id": "start",
+    "title": "Начало и понимание запроса",
+    "points": 45.45,
+    "max_points": 45.45
+   },
+   {
+    "section_id": "security",
+    "title": "Безопасность и решение",
+    "points": 0.0,
+    "max_points": 0.0
+   },
+   {
+    "section_id": "conduct",
+    "title": "Ведение и завершение диалога",
+    "points": 54.55,
+    "max_points": 54.55
+   },
+   {
+    "section_id": "gross",
+    "title": "Грубые нарушения",
+    "points": 0.0,
+    "max_points": 0.0
+   }
+  ],
+  "gross": false,
+  "gross_categories": [],
+  "needs_review": false,
+  "criteria": [
+   {
+    "id": 1041,
+    "criterion_id": "01",
+    "title": "Установление контакта",
+    "section": "start",
+    "type": "yes_no",
+    "weight": 10.0,
+    "verdict": "Да",
+    "final_verdict": "Да",
+    "category": "",
+    "score": {
+     "criterion_id": "01",
+     "verdict": "Да",
+     "applicable": true,
+     "weight": 10.0,
+     "effective_weight": 18.1818,
+     "raw_points": 10.0,
+     "points": 18.1818,
+     "max_points": 18.1818
+    },
+    "evidence": [
+     {
+      "id": "m10",
+      "quote": "Здравствуйте! Меня зовут Валерия, поддержка Freedom Broker.",
+      "ok": true,
+      "repaired": false
+     }
+    ],
+    "checked_range": null,
+    "explanation": "Установление контакта — Да. Приветствие и имя в первом ответе. Основание — m10.",
+    "reasoning": "m10 — приветствие, имя и название компании.",
+    "how_to_fix": "",
+    "needs_review": false,
+    "second_opinion": null,
+    "status": "done",
+    "error": null,
+    "appeal_id": null,
+    "appeal_status": null
+   },
+   {
+    "id": 1042,
+    "criterion_id": "02",
+    "title": "Выявление потребности",
+    "section": "start",
+    "type": "yes_no",
+    "weight": 15.0,
+    "verdict": "Да",
+    "final_verdict": "Да",
+    "category": "",
+    "score": {
+     "criterion_id": "02",
+     "verdict": "Да",
+     "applicable": true,
+     "weight": 15.0,
+     "effective_weight": 27.2727,
+     "raw_points": 15.0,
+     "points": 27.2727,
+     "max_points": 27.2727
+    },
+    "evidence": [
+     {
+      "id": "m5",
+      "quote": "Сразу подключите оператора, я ему объясню.",
+      "ok": true,
+      "repaired": false
+     },
+     {
+      "id": "m10",
+      "quote": "С чем помочь?",
+      "ok": true,
+      "repaired": false
+     }
+    ],
+    "checked_range": null,
+    "explanation": "Выявление потребности — Да. Клиент собирался объяснить вопрос оператору; оператор спросил, чем помочь. Основание — m5, m10.",
+    "reasoning": "Клиент ушёл до формулировки запроса, а оператор спросил, чем помочь, — «Да» по трактовке.",
+    "how_to_fix": "",
+    "needs_review": false,
+    "second_opinion": null,
+    "status": "done",
+    "error": null,
+    "appeal_id": null,
+    "appeal_status": null
+   },
+   {
+    "id": 1043,
+    "criterion_id": "03",
+    "title": "Идентификация",
+    "section": "security",
+    "type": "yes_no",
+    "weight": 20.0,
+    "verdict": "N/A",
+    "final_verdict": "N/A",
+    "category": "",
+    "score": {
+     "criterion_id": "03",
+     "verdict": "N/A",
+     "applicable": false,
+     "weight": 20.0,
+     "effective_weight": 0.0,
+     "raw_points": 0.0,
+     "points": 0.0,
+     "max_points": 0.0
+    },
+    "evidence": [
+     {
+      "id": "m11",
+      "quote": "Клиент покинул чат.",
+      "ok": true,
+      "repaired": false
+     }
+    ],
+    "checked_range": null,
+    "explanation": "Идентификация — N/A. Запрос не прозвучал, данные счёта не раскрывались. Основание — m11.",
+    "reasoning": "Действий по счёту не было.",
+    "how_to_fix": "",
+    "needs_review": false,
+    "second_opinion": null,
+    "status": "done",
+    "error": null,
+    "appeal_id": null,
+    "appeal_status": null
+   },
+   {
+    "id": 1044,
+    "criterion_id": "04",
+    "title": "Корректная и полная консультация",
+    "section": "security",
+    "type": "scale",
+    "weight": 20.0,
+    "verdict": "N/A",
+    "final_verdict": "N/A",
+    "category": "",
+    "score": {
+     "criterion_id": "04",
+     "verdict": "N/A",
+     "applicable": false,
+     "weight": 20.0,
+     "effective_weight": 0.0,
+     "raw_points": 0.0,
+     "points": 0.0,
+     "max_points": 0.0
+    },
+    "evidence": [
+     {
+      "id": "m11",
+      "quote": "Клиент покинул чат.",
+      "ok": true,
+      "repaired": false
+     }
+    ],
+    "checked_range": null,
+    "explanation": "Корректная и полная консультация — N/A. Клиент покинул чат до того, как сформулировал запрос. Основание — m11.",
+    "reasoning": "Условие N/A критерия выполнено: запроса не было.",
+    "how_to_fix": "",
+    "needs_review": false,
+    "second_opinion": null,
+    "status": "done",
+    "error": null,
+    "appeal_id": null,
+    "appeal_status": null
+   },
+   {
+    "id": 1045,
+    "criterion_id": "05",
+    "title": "Эмпатия и клиентоориентированность",
+    "section": "conduct",
+    "type": "yes_no",
+    "weight": 15.0,
+    "verdict": "Да",
+    "final_verdict": "Да",
+    "category": "",
+    "score": {
+     "criterion_id": "05",
+     "verdict": "Да",
+     "applicable": true,
+     "weight": 15.0,
+     "effective_weight": 27.2727,
+     "raw_points": 15.0,
+     "points": 27.2727,
+     "max_points": 27.2727
+    },
+    "evidence": [
+     {
+      "id": "m10",
+      "quote": "Здравствуйте! Меня зовут Валерия",
+      "ok": true,
+      "repaired": false
+     }
+    ],
+    "checked_range": null,
+    "explanation": "Эмпатия и клиентоориентированность — Да. Вежливое приветствие и предложение помощи. Основание — m10.",
+    "reasoning": "Недовольства клиент не выражал.",
+    "how_to_fix": "",
+    "needs_review": false,
+    "second_opinion": null,
+    "status": "done",
+    "error": null,
+    "appeal_id": null,
+    "appeal_status": null
+   },
+   {
+    "id": 1046,
+    "criterion_id": "06",
+    "title": "Управление диалогом, скорость и грамотность",
+    "section": "conduct",
+    "type": "scale",
+    "weight": 15.0,
+    "verdict": "10",
+    "final_verdict": "10",
+    "category": "",
+    "score": {
+     "criterion_id": "06",
+     "verdict": "10",
+     "applicable": true,
+     "weight": 15.0,
+     "effective_weight": 27.2727,
+     "raw_points": 15.0,
+     "points": 27.2727,
+     "max_points": 27.2727
+    },
+    "evidence": [
+     {
+      "id": "m10",
+      "quote": "С чем помочь?",
+      "ok": true,
+      "repaired": false
+     }
+    ],
+    "checked_range": null,
+    "explanation": "Управление диалогом — 10. Единственная реплика оператора ясна. Основание — m10.",
+    "reasoning": "Пауза до подключения — время первой реакции, оно не оценивается.",
+    "how_to_fix": "",
+    "needs_review": false,
+    "second_opinion": null,
+    "status": "done",
+    "error": null,
+    "appeal_id": null,
+    "appeal_status": null
+   },
+   {
+    "id": 1047,
+    "criterion_id": "07",
+    "title": "Завершение",
+    "section": "conduct",
+    "type": "yes_no",
+    "weight": 5.0,
+    "verdict": "N/A",
+    "final_verdict": "N/A",
+    "category": "",
+    "score": {
+     "criterion_id": "07",
+     "verdict": "N/A",
+     "applicable": false,
+     "weight": 5.0,
+     "effective_weight": 0.0,
+     "raw_points": 0.0,
+     "points": 0.0,
+     "max_points": 0.0
+    },
+    "evidence": [
+     {
+      "id": "m11",
+      "quote": "Клиент покинул чат.",
+      "ok": true,
+      "repaired": false
+     }
+    ],
+    "checked_range": null,
+    "explanation": "Завершение — N/A. Клиент покинул чат через 13 секунд после приветствия оператора — завершить диалог было невозможно. Основание — m11.",
+    "reasoning": "Тип завершения — client_left, обрыв раньше, чем оператор мог ответить.",
+    "how_to_fix": "",
+    "needs_review": false,
+    "second_opinion": null,
+    "status": "done",
+    "error": null,
+    "appeal_id": null,
+    "appeal_status": null
+   },
+   {
+    "id": 1048,
+    "criterion_id": "08",
+    "title": "Грубые ошибки",
+    "section": "gross",
+    "type": "flag",
+    "weight": 0.0,
+    "verdict": "Нет",
+    "final_verdict": "Нет",
+    "category": "",
+    "score": {
+     "criterion_id": "08",
+     "verdict": "Нет",
+     "applicable": true,
+     "weight": 0.0,
+     "effective_weight": 0.0,
+     "raw_points": 0.0,
+     "points": 0.0,
+     "max_points": 0.0
+    },
+    "evidence": [
+     {
+      "id": "m10",
+      "quote": "С чем помочь?",
+      "ok": true,
+      "repaired": false
+     }
+    ],
+    "checked_range": null,
+    "explanation": "Грубые ошибки — Нет. Оскорблений, предложений услуг в обход компании и раскрытия конфиденциальных данных нет.",
+    "reasoning": "Одна реплика оператора, нарушений нет.",
+    "how_to_fix": "",
+    "needs_review": false,
+    "second_opinion": null,
+    "status": "done",
+    "error": null,
+    "appeal_id": null,
+    "appeal_status": null
+   }
+  ],
+  "cost_usd": 0.009,
+  "latency_ms": 5052,
+  "n_llm_calls": 8,
+  "created_at": "2026-11-07T19:12:31Z"
+ },
+ "DEV:p4-ru-002": {
+  "id": 105,
+  "uid": "DEV:p4-ru-002",
+  "run_id": 1,
+  "checklist_version_id": 1,
+  "checklist_version": 1,
+  "profile": "gemini-flash",
+  "model": "gemini-3.8-flash",
+  "prompt_version": "p1-3fa9c2d1",
+  "status": "done",
+  "total": 82.35,
+  "final_total": 82.35,
+  "sections": [
+   {
+    "section_id": "start",
+    "title": "Начало и понимание запроса",
+    "points": 0.0,
+    "max_points": 11.76
+   },
+   {
+    "section_id": "security",
+    "title": "Безопасность и решение",
+    "points": 41.18,
+    "max_points": 47.06
+   },
+   {
+    "section_id": "conduct",
+    "title": "Ведение и завершение диалога",
+    "points": 41.18,
+    "max_points": 41.18
+   },
+   {
+    "section_id": "gross",
+    "title": "Грубые нарушения",
+    "points": 0.0,
+    "max_points": 0.0
+   }
+  ],
+  "original_sections": [
+   {
+    "section_id": "start",
+    "title": "Начало и понимание запроса",
+    "points": 0.0,
+    "max_points": 11.76
+   },
+   {
+    "section_id": "security",
+    "title": "Безопасность и решение",
+    "points": 41.18,
+    "max_points": 47.06
+   },
+   {
+    "section_id": "conduct",
+    "title": "Ведение и завершение диалога",
+    "points": 41.18,
+    "max_points": 41.18
+   },
+   {
+    "section_id": "gross",
+    "title": "Грубые нарушения",
+    "points": 0.0,
+    "max_points": 0.0
+   }
+  ],
+  "gross": false,
+  "gross_categories": [],
+  "needs_review": false,
+  "criteria": [
+   {
+    "id": 1051,
+    "criterion_id": "01",
+    "title": "Установление контакта",
+    "section": "start",
+    "type": "yes_no",
+    "weight": 10.0,
+    "verdict": "Нет",
+    "final_verdict": "Нет",
+    "category": "",
+    "score": {
+     "criterion_id": "01",
+     "verdict": "Нет",
+     "applicable": true,
+     "weight": 10.0,
+     "effective_weight": 11.7647,
+     "raw_points": 0.0,
+     "points": 0.0,
+     "max_points": 11.7647
+    },
+    "evidence": [
+     {
+      "id": "m3",
+      "quote": "Да компания федеброкер меня зовут [Имя скрыто]",
+      "ok": true,
+      "repaired": false
+     }
+    ],
+    "checked_range": [
+     "m3",
+     "m3"
+    ],
+    "explanation": "Установление контакта — Нет. Оператор назвал компанию и представился, но не поздоровался в первой реплике. Основание — m3.",
+    "reasoning": "Первая реплика оператора — m3: представление есть, приветствия нет. Реплика до начала записи.",
+    "how_to_fix": "Добрый день! Компания Freedom Broker, меня зовут …, мы с вами ранее разговаривали.",
+    "needs_review": false,
+    "second_opinion": null,
+    "status": "done",
+    "error": null,
+    "appeal_id": 2,
+    "appeal_status": "open"
+   },
+   {
+    "id": 1052,
+    "criterion_id": "02",
+    "title": "Выявление потребности",
+    "section": "start",
+    "type": "yes_no",
+    "weight": 15.0,
+    "verdict": "N/A",
+    "final_verdict": "N/A",
+    "category": "",
+    "score": {
+     "criterion_id": "02",
+     "verdict": "N/A",
+     "applicable": false,
+     "weight": 15.0,
+     "effective_weight": 0.0,
+     "raw_points": 0.0,
+     "points": 0.0,
+     "max_points": 0.0
+    },
+    "evidence": [
+     {
+      "id": "m3",
+      "quote": "мы с вами ранее разговаривали",
+      "ok": true,
+      "repaired": false
+     },
+     {
+      "id": "m6",
+      "quote": "можете сейчас попробовать выставить лимит на приказ",
+      "ok": true,
+      "repaired": false
+     }
+    ],
+    "checked_range": null,
+    "explanation": "Выявление потребности — N/A. Продолжение ранее начатого обращения: бумага и ситуация оператору уже известны, уточнений не требовалось. Основание — m3, m6.",
+    "reasoning": "Повторный звонок по известному вопросу.",
+    "how_to_fix": "",
+    "needs_review": false,
+    "second_opinion": null,
+    "status": "done",
+    "error": null,
+    "appeal_id": null,
+    "appeal_status": null
+   },
+   {
+    "id": 1053,
+    "criterion_id": "03",
+    "title": "Идентификация",
+    "section": "security",
+    "type": "yes_no",
+    "weight": 20.0,
+    "verdict": "Да",
+    "final_verdict": "Да",
+    "category": "",
+    "score": {
+     "criterion_id": "03",
+     "verdict": "Да",
+     "applicable": true,
+     "weight": 20.0,
+     "effective_weight": 23.5294,
+     "raw_points": 20.0,
+     "points": 23.5294,
+     "max_points": 23.5294
+    },
+    "evidence": [
+     {
+      "id": "m12",
+      "quote": "подскажете, пожалуйста, ещё раз ваш ин полное имя и адрес",
+      "ok": true,
+      "repaired": false
+     },
+     {
+      "id": "m15",
+      "quote": "Да, всё верно.",
+      "ok": true,
+      "repaired": false
+     }
+    ],
+    "checked_range": null,
+    "explanation": "Идентификация — Да. Перед соединением с трейдером оператор повторно проверил личность (ИИН, ФИО, адрес) и подтвердил: «Да, всё верно». Основание — m12, m15.",
+    "reasoning": "Голосовая идентификация в звонке: запрос данных и подтверждение оператора до обсуждения сделки.",
+    "how_to_fix": "",
+    "needs_review": false,
+    "second_opinion": null,
+    "status": "done",
+    "error": null,
+    "appeal_id": null,
+    "appeal_status": null
+   },
+   {
+    "id": 1054,
+    "criterion_id": "04",
+    "title": "Корректная и полная консультация",
+    "section": "security",
+    "type": "scale",
+    "weight": 20.0,
+    "verdict": "15",
+    "final_verdict": "15",
+    "category": "",
+    "score": {
+     "criterion_id": "04",
+     "verdict": "15",
+     "applicable": true,
+     "weight": 20.0,
+     "effective_weight": 23.5294,
+     "raw_points": 15.0,
+     "points": 17.6471,
+     "max_points": 23.5294
+    },
+    "evidence": [
+     {
+      "id": "m64",
+      "quote": "его можно купить только по уйти всей сделки",
+      "ok": true,
+      "repaired": false
+     },
+     {
+      "id": "m66",
+      "quote": "есть также другие юрисдикции, которые у которых есть доступ к покупке",
+      "ok": true,
+      "repaired": false
+     },
+     {
+      "id": "m67",
+      "quote": "только путь все сделки его можно приобрести или продать",
+      "ok": true,
+      "repaired": false
+     }
+    ],
+    "checked_range": null,
+    "explanation": "Корректная и полная консультация — 15. Объяснено, что бумагу можно купить или продать только внебиржевой сделкой и почему отображается стакан. Не сказано, как оформить такую сделку и на каких условиях. Основание — m64, m66, m67.",
+    "reasoning": "Сказанное коллеге на удержании (m42–m44 о комиссии) клиент не слышал и не учитывается.",
+    "how_to_fix": "Такую бумагу можно купить через внебиржевую сделку: оставьте заявку трейдеру, комиссия — 2% от суммы, минимум 25 долларов. Оформить заявку?",
+    "needs_review": false,
+    "second_opinion": null,
+    "status": "done",
+    "error": null,
+    "appeal_id": null,
+    "appeal_status": null
+   },
+   {
+    "id": 1055,
+    "criterion_id": "05",
+    "title": "Эмпатия и клиентоориентированность",
+    "section": "conduct",
+    "type": "yes_no",
+    "weight": 15.0,
+    "verdict": "Да",
+    "final_verdict": "Да",
+    "category": "",
+    "score": {
+     "criterion_id": "05",
+     "verdict": "Да",
+     "applicable": true,
+     "weight": 15.0,
+     "effective_weight": 17.6471,
+     "raw_points": 15.0,
+     "points": 17.6471,
+     "max_points": 17.6471
+    },
+    "evidence": [
+     {
+      "id": "m60",
+      "quote": "благодарю вас за ожидание",
+      "ok": true,
+      "repaired": false
+     },
+     {
+      "id": "m64",
+      "quote": "К сожалению",
+      "ok": true,
+      "repaired": false
+     }
+    ],
+    "checked_range": null,
+    "explanation": "Эмпатия и клиентоориентированность — Да. Оператор вежлив, благодарит за ожидание и сочувственно объясняет отказ. Основание — m60, m64.",
+    "reasoning": "Тон доброжелательный на всём участке вне удержания.",
+    "how_to_fix": "",
+    "needs_review": false,
+    "second_opinion": null,
+    "status": "done",
+    "error": null,
+    "appeal_id": null,
+    "appeal_status": null
+   },
+   {
+    "id": 1056,
+    "criterion_id": "06",
+    "title": "Управление диалогом, скорость и грамотность",
+    "section": "conduct",
+    "type": "scale",
+    "weight": 15.0,
+    "verdict": "10",
+    "final_verdict": "10",
+    "category": "",
+    "score": {
+     "criterion_id": "06",
+     "verdict": "10",
+     "applicable": true,
+     "weight": 15.0,
+     "effective_weight": 17.6471,
+     "raw_points": 15.0,
+     "points": 17.6471,
+     "max_points": 17.6471
+    },
+    "evidence": [
+     {
+      "id": "m15",
+      "quote": "Сейчас прошу вас ожидать на линии.",
+      "ok": true,
+      "repaired": false
+     },
+     {
+      "id": "m60",
+      "quote": "благодарю вас за ожидание",
+      "ok": true,
+      "repaired": false
+     }
+    ],
+    "checked_range": null,
+    "explanation": "Управление диалогом — 10. Удержание предупреждено и закрыто благодарностью за ожидание; объяснение понятно. Основание — m15, m60, m64.",
+    "reasoning": "Консультация на удержании не оценивается. Ошибки распознавания — не ошибки оператора.",
+    "how_to_fix": "",
+    "needs_review": false,
+    "second_opinion": null,
+    "status": "done",
+    "error": null,
+    "appeal_id": null,
+    "appeal_status": null
+   },
+   {
+    "id": 1057,
+    "criterion_id": "07",
+    "title": "Завершение",
+    "section": "conduct",
+    "type": "yes_no",
+    "weight": 5.0,
+    "verdict": "Да",
+    "final_verdict": "Да",
+    "category": "",
+    "score": {
+     "criterion_id": "07",
+     "verdict": "Да",
+     "applicable": true,
+     "weight": 5.0,
+     "effective_weight": 5.8824,
+     "raw_points": 5.0,
+     "points": 5.8824,
+     "max_points": 5.8824
+    },
+    "evidence": [
+     {
+      "id": "m70",
+      "quote": "Я понял спасибо.",
+      "ok": true,
+      "repaired": false
+     },
+     {
+      "id": "m71",
+      "quote": "Благодарю вас за уделенное время всего хорошего до свидания.",
+      "ok": true,
+      "repaired": false
+     }
+    ],
+    "checked_range": null,
+    "explanation": "Завершение — Да. После подтверждения клиента оператор поблагодарил за время и попрощался. Основание — m70, m71.",
+    "reasoning": "Клиент подтвердил, что понял ответ, затем прощание оператора.",
+    "how_to_fix": "",
+    "needs_review": false,
+    "second_opinion": null,
+    "status": "done",
+    "error": null,
+    "appeal_id": null,
+    "appeal_status": null
+   },
+   {
+    "id": 1058,
+    "criterion_id": "08",
+    "title": "Грубые ошибки",
+    "section": "gross",
+    "type": "flag",
+    "weight": 0.0,
+    "verdict": "Нет",
+    "final_verdict": "Нет",
+    "category": "",
+    "score": {
+     "criterion_id": "08",
+     "verdict": "Нет",
+     "applicable": true,
+     "weight": 0.0,
+     "effective_weight": 0.0,
+     "raw_points": 0.0,
+     "points": 0.0,
+     "max_points": 0.0
+    },
+    "evidence": [
+     {
+      "id": "m64",
+      "quote": "К сожалению, его на бирже нельзя купить",
+      "ok": true,
+      "repaired": false
+     }
+    ],
+    "checked_range": null,
+    "explanation": "Грубые ошибки — Нет. Оскорблений, предложений услуг в обход компании и раскрытия конфиденциальных данных нет. Участок удержания не учитывается.",
+    "reasoning": "Реплики удержания клиент не слышал.",
+    "how_to_fix": "",
+    "needs_review": false,
+    "second_opinion": null,
+    "status": "done",
+    "error": null,
+    "appeal_id": null,
+    "appeal_status": null
+   }
+  ],
+  "cost_usd": 0.0103,
+  "latency_ms": 9857,
+  "n_llm_calls": 8,
+  "created_at": "2026-11-07T19:12:38Z"
+ }
+}

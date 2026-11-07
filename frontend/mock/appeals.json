@@ -1,0 +1,308 @@
+[
+ {
+  "id": 1,
+  "evaluation_id": 101,
+  "uid": "DEV:p1-ru-001",
+  "criterion_id": "07",
+  "criterion_title": "Завершение",
+  "comment": "Клиентка подтвердила, что нашла тариф, а я вежливо попрощалась. По трактовке Т1 это «Да».",
+  "counter_evidence": [
+   "m11",
+   "m12"
+  ],
+  "status": "decided",
+  "created_at": "2026-11-07T19:41:10Z",
+  "original": {
+   "id": 1017,
+   "criterion_id": "07",
+   "title": "Завершение",
+   "section": "conduct",
+   "type": "yes_no",
+   "weight": 5.0,
+   "verdict": "Нет",
+   "final_verdict": "Нет",
+   "category": "",
+   "score": {
+    "criterion_id": "07",
+    "verdict": "Нет",
+    "applicable": true,
+    "weight": 5.0,
+    "effective_weight": 7.6923,
+    "raw_points": 0.0,
+    "points": 0.0,
+    "max_points": 7.6923
+   },
+   "evidence": [
+    {
+     "id": "m12",
+     "quote": "Пожалуйста. Хорошего вечера!",
+     "ok": true,
+     "repaired": false
+    }
+   ],
+   "checked_range": [
+    "m11",
+    "m12"
+   ],
+   "explanation": "Завершение — Нет. Оператор попрощался, но не подвёл итог и не предложил дальнейшую помощь. Основание — m12.",
+   "reasoning": "Последняя реплика оператора — короткое прощание. Итога и предложения помощи на участке m11–m12 нет.",
+   "how_to_fix": "Пожалуйста! Рада, что получилось. Если появятся вопросы по тарифу — пишите, поможем. Хорошего вечера!",
+   "needs_review": false,
+   "second_opinion": null,
+   "status": "done",
+   "error": null,
+   "appeal_id": 1,
+   "appeal_status": "decided"
+  },
+  "fragment": [
+   {
+    "mid": "m8",
+    "idx": 8,
+    "speaker": "bot",
+    "text": "Пожалуйста, ожидайте. Оператор скоро подключится к чату.",
+    "ts_raw": "00:36",
+    "offset_sec": 36.0,
+    "audio_sec": null,
+    "segment": "bot",
+    "recorded": true,
+    "after_end": false,
+    "event_type": null,
+    "dup_of": null
+   },
+   {
+    "mid": "m9",
+    "idx": 9,
+    "speaker": "system",
+    "text": "Эскалация на оператора.",
+    "ts_raw": "00:38",
+    "offset_sec": 38.0,
+    "audio_sec": null,
+    "segment": "bot",
+    "recorded": true,
+    "after_end": false,
+    "event_type": "escalated",
+    "dup_of": null
+   },
+   {
+    "mid": "m10",
+    "idx": 10,
+    "speaker": "operator",
+    "text": "Здравствуйте! Меня зовут Алина. В веб-версии откройте вкладку «Кабинет». Название тарифа будет под вашим ФИО.",
+    "ts_raw": "01:15",
+    "offset_sec": 75.0,
+    "audio_sec": null,
+    "segment": "operator",
+    "recorded": true,
+    "after_end": false,
+    "event_type": null,
+    "dup_of": null
+   },
+   {
+    "mid": "m11",
+    "idx": 11,
+    "speaker": "client",
+    "text": "Нашла, спасибо.",
+    "ts_raw": "01:28",
+    "offset_sec": 88.0,
+    "audio_sec": null,
+    "segment": "operator",
+    "recorded": true,
+    "after_end": false,
+    "event_type": null,
+    "dup_of": null
+   },
+   {
+    "mid": "m12",
+    "idx": 12,
+    "speaker": "operator",
+    "text": "Пожалуйста. Хорошего вечера!",
+    "ts_raw": "02:04",
+    "offset_sec": 124.0,
+    "audio_sec": null,
+    "segment": "operator",
+    "recorded": true,
+    "after_end": false,
+    "event_type": null,
+    "dup_of": null
+   }
+  ],
+  "ai_opinion": null,
+  "decision": {
+   "action": "change",
+   "new_verdict": "Да",
+   "reviewer": "reviewer",
+   "make_precedent": true,
+   "reason": "Т1: клиент подтвердил, что вопрос решён, — вежливое прощание засчитывается. Трактовка добавлена в чек-лист v2.",
+   "created_at": "2026-11-07T19:52:31Z",
+   "prev_final_total": 92.31,
+   "new_final_total": 100.0
+  },
+  "prev_final_total": 92.31,
+  "new_final_total": 100.0
+ },
+ {
+  "id": 2,
+  "evaluation_id": 105,
+  "uid": "DEV:p4-ru-002",
+  "criterion_id": "01",
+  "criterion_title": "Установление контакта",
+  "comment": "Это повторный звонок: клиент перезвонил по открытому вопросу, начало фразы обрезано распознаванием. Компанию и имя я назвал сразу.",
+  "counter_evidence": [
+   "m3",
+   "m4"
+  ],
+  "status": "open",
+  "created_at": "2026-11-07T20:15:44Z",
+  "original": {
+   "id": 1051,
+   "criterion_id": "01",
+   "title": "Установление контакта",
+   "section": "start",
+   "type": "yes_no",
+   "weight": 10.0,
+   "verdict": "Нет",
+   "final_verdict": "Нет",
+   "category": "",
+   "score": {
+    "criterion_id": "01",
+    "verdict": "Нет",
+    "applicable": true,
+    "weight": 10.0,
+    "effective_weight": 11.7647,
+    "raw_points": 0.0,
+    "points": 0.0,
+    "max_points": 11.7647
+   },
+   "evidence": [
+    {
+     "id": "m3",
+     "quote": "Да компания федеброкер меня зовут [Имя скрыто]",
+     "ok": true,
+     "repaired": false
+    }
+   ],
+   "checked_range": [
+    "m3",
+    "m3"
+   ],
+   "explanation": "Установление контакта — Нет. Оператор назвал компанию и представился, но не поздоровался в первой реплике. Основание — m3.",
+   "reasoning": "Первая реплика оператора — m3: представление есть, приветствия нет. Реплика до начала записи.",
+   "how_to_fix": "Добрый день! Компания Freedom Broker, меня зовут …, мы с вами ранее разговаривали.",
+   "needs_review": false,
+   "second_opinion": null,
+   "status": "done",
+   "error": null,
+   "appeal_id": 2,
+   "appeal_status": "open"
+  },
+  "fragment": [
+   {
+    "mid": "m1",
+    "idx": 1,
+    "speaker": "system",
+    "text": "Агент присоединился к разговору с клиентом.",
+    "ts_raw": "2026-11-03T13:49:20.0219936+00:00",
+    "offset_sec": 0.0,
+    "audio_sec": null,
+    "segment": "bot",
+    "recorded": false,
+    "after_end": false,
+    "event_type": "operator_joined",
+    "dup_of": null
+   },
+   {
+    "mid": "m2",
+    "idx": 2,
+    "speaker": "client",
+    "text": "Алло.",
+    "ts_raw": "2026-11-03T13:49:43.0876662+00:00",
+    "offset_sec": 23.066,
+    "audio_sec": null,
+    "segment": "bot",
+    "recorded": false,
+    "after_end": false,
+    "event_type": null,
+    "dup_of": null
+   },
+   {
+    "mid": "m3",
+    "idx": 3,
+    "speaker": "operator",
+    "text": "Да компания федеброкер меня зовут [Имя скрыто], [Имя скрыто], мы с вами ранее разговаривали.",
+    "ts_raw": "2026-11-03T13:49:47.2615709+00:00",
+    "offset_sec": 27.24,
+    "audio_sec": null,
+    "segment": "operator",
+    "recorded": false,
+    "after_end": false,
+    "event_type": null,
+    "dup_of": null
+   },
+   {
+    "mid": "m4",
+    "idx": 4,
+    "speaker": "client",
+    "text": "Да.",
+    "ts_raw": "2026-11-03T13:49:48.7660314+00:00",
+    "offset_sec": 28.744,
+    "audio_sec": null,
+    "segment": "operator",
+    "recorded": false,
+    "after_end": false,
+    "event_type": null,
+    "dup_of": null
+   },
+   {
+    "mid": "m5",
+    "idx": 5,
+    "speaker": "system",
+    "text": "Запись и транскрибирование запущены.",
+    "ts_raw": "2026-11-03T13:49:50.2280763+00:00",
+    "offset_sec": 30.206,
+    "audio_sec": 0.0,
+    "segment": "operator",
+    "recorded": true,
+    "after_end": false,
+    "event_type": "recording_started",
+    "dup_of": null
+   },
+   {
+    "mid": "m6",
+    "idx": 6,
+    "speaker": "operator",
+    "text": "Да можете сейчас попробовать выставить лимит на приказ по данной ценной бумаге.",
+    "ts_raw": "2026-11-03T13:49:52.8297035+00:00",
+    "offset_sec": 32.808,
+    "audio_sec": 2.6,
+    "segment": "operator",
+    "recorded": true,
+    "after_end": false,
+    "event_type": null,
+    "dup_of": null
+   },
+   {
+    "mid": "m7",
+    "idx": 7,
+    "speaker": "client",
+    "text": "Мхм, хорошо.",
+    "ts_raw": "2026-11-03T13:49:55.2876227+00:00",
+    "offset_sec": 35.266,
+    "audio_sec": 5.06,
+    "segment": "operator",
+    "recorded": true,
+    "after_end": false,
+    "event_type": null,
+    "dup_of": null
+   }
+  ],
+  "ai_opinion": {
+   "profile": "gemini-argon",
+   "model": "gemini-4-argon",
+   "verdict": "Да",
+   "explanation": "Без исходного вердикта: реплика m3 начинается с «Да компания…» — похоже на обрезанное распознаванием приветствие. Оператор назвал компанию и имя, клиент узнал его. Склоняюсь к «Да», уверенность средняя."
+  },
+  "decision": null,
+  "prev_final_total": null,
+  "new_final_total": null
+ }
+]

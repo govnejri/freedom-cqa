@@ -1,0 +1,12 @@
+{
+ "ok": true,
+ "db": true,
+ "roles": {
+  "judge": "gemini-flash",
+  "cross_check": "gemini-argon"
+ },
+ "keys": {
+  "GEMINI_API_KEY": true
+ },
+ "active_checklist_version_id": 2
+}

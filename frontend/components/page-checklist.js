@@ -1,0 +1,305 @@
+/* <cqa-page-checklist> — редактор чек-листа #/checklists/{id}, …/v/{vid}, …/diff/{a}/{b}.
+   Версии неизменяемы: правки копятся в черновике (sessionStorage) и сохраняются как новая версия. */
+(function (CQA) {
+  'use strict';
+  var h = CQA.h, icon = CQA.icon, t = CQA.t, fmt = CQA.fmt, ui = CQA.ui, U = CQA.util;
+
+  var STATUS_TONE = { published: 'success', draft: 'neutral', frozen: 'brand' };
+
+  class CqaPageChecklist extends HTMLElement {
+    connectedCallback() {
+      if (this._built) return;
+      this._built = true;
+      this.cid = this.params.cid;
+      this.root = h('div', { class: 'page cl-page' }, ui.skeleton('card', 6));
+      this.textContent = '';
+      this.appendChild(this.root);
+      document.title = t('nav.checklist') + ' · CQA';
+      this.load();
+    }
+
+    update(params, query) {
+      if (params.cid !== this.cid || !this.versions) return false;
+      var samePath = this.params && params.vid === this.params.vid && params.a === this.params.a && params.b === this.params.b;
+      this.params = params;
+      this.query = query;
+      this.renderAll();
+      if (!samePath) { var main = document.getElementById('main'); if (main) main.scrollTop = 0; }
+      return true;
+    }
+
+    load() {
+      var self = this;
+      CQA.dom.replace(this.root, ui.skeleton('card', 6));
+      CQA.api.checklistVersions(this.cid).then(function (list) {
+        self.versions = (list || []).slice().sort(function (a, b) { return b.version - a.version; });
+        self.renderAll();
+      }, function (err) {
+        CQA.dom.replace(self.root, ui.error(err, function () { self.load(); }, err.status === 404 ? t('cl.notFound') : null));
+      });
+    }
+
+    active() { return this.versions.filter(function (v) { return v.is_active; })[0] || null; }
+    byId(id) { return this.versions.filter(function (v) { return v.id === Number(id); })[0] || null; }
+    previous(v) { return this.versions.filter(function (x) { return x.version < v.version; }).sort(function (a, b) { return b.version - a.version; })[0] || null; }
+
+    ensureConfig(v) {
+      if (!v) return Promise.resolve(null);
+      if (v.config) return Promise.resolve(v);
+      return CQA.api.checklistVersion(v.id).then(function (full) { v.config = full.config; return v; });
+    }
+
+    renderAll() {
+      var self = this, p = this.params;
+      if (!this.versions.length) {
+        CQA.dom.replace(this.root, ui.empty(t('cl.noVersions'), t('cl.noVersionsText'), null, 'checklist'));
+        return;
+      }
+      this.aside = h('aside', { class: 'cl-versions card', 'aria-label': t('cl.versions') });
+      this.main = h('div', { class: 'cl-main' });
+      var act = this.active();
+      var title = (act && act.config && act.config.title) || (this.versions[0].config && this.versions[0].config.title) || this.cid;
+      var newest = this.versions[0];
+      var cmpBase = act && act.id !== newest.id ? act : this.versions[1];
+      CQA.dom.replace(this.root,
+        h('div', { class: 'page-header' },
+          h('div', null, h('h1', null, t('nav.checklist')), h('div', { class: 'page-header__sub' }, title + ' · ', h('span', { class: 'mono' }, this.cid))),
+          cmpBase ? h('a', { class: 'btn', href: '#/checklists/' + encodeURIComponent(this.cid) + '/diff/' + cmpBase.id + '/' + newest.id },
+            icon('compare'), t('cl.compareVersions')) : null),
+        h('div', { class: 'cl-layout' }, this.aside, this.main));
+      if (p.a && p.b) {
+        this.renderAside(null);
+        this.renderDiff(this.byId(p.a), this.byId(p.b));
+      } else {
+        var v = p.vid ? this.byId(p.vid) : (act || this.versions[0]);
+        if (!v) { CQA.dom.replace(this.main, ui.empty(t('cl.versionNotFound'), null, h('a', { class: 'btn', href: '#/checklists/' + encodeURIComponent(this.cid) }, t('cl.toActive')), 'warning')); this.renderAside(null); return; }
+        this.renderAside(v.id);
+        CQA.dom.replace(this.main, ui.skeleton('card', 8));
+        Promise.all([this.ensureConfig(v), this.ensureConfig(act)]).then(function () { self.renderEditor(v); },
+          function (err) { CQA.dom.replace(self.main, ui.error(err, function () { self.renderAll(); })); });
+      }
+    }
+
+    renderAside(currentId) {
+      var cid = encodeURIComponent(this.cid);
+      var ul = h('ul', { class: 'cl-versions__list' });
+      this.versions.forEach(function (v) {
+        ul.appendChild(h('li', null, h('a', { class: 'cl-version' + (v.id === currentId ? ' is-current' : ''), href: '#/checklists/' + cid + '/v/' + v.id, 'aria-current': v.id === currentId ? 'page' : null },
+          h('div', { class: 'row' },
+            h('span', { class: 't-body1-strong' }, t('cl.versionN', { v: v.version })),
+            v.is_active ? ui.badge(t('cl.active'), 'brand-filled', 'checkCircle') : ui.badge(CQA.i18n.tx('vstatus.' + v.status, v.status), STATUS_TONE[v.status] || 'neutral')),
+          h('div', { class: 'muted t-caption1' }, fmt.date(v.created_at)),
+          v.comment ? h('div', { class: 'cl-version__comment t-caption1' }, v.comment) : null)));
+      });
+      CQA.dom.replace(this.aside, h('h2', { class: 'card__title' }, t('cl.versions')), ul);
+    }
+
+    // ------------------------------------------------------------ редактор версии
+    draftKey(v) { return 'cqa.draft.' + this.cid + '.' + v.id; }
+
+    renderEditor(v) {
+      var self = this;
+      var act = this.active();
+      var cid = encodeURIComponent(this.cid);
+      this.version = v;
+      document.title = t('cl.versionN', { v: v.version }) + ' · ' + t('nav.checklist') + ' · CQA';
+      var saved = CQA.store.get(this.draftKey(v), null, true);
+      var restored = !!(saved && saved.config && !U.sameJson(saved.config, v.config));
+      this.draft = restored ? saved.config : U.deepClone(v.config);
+      this.expanded = new Set(restored && saved.expanded ? saved.expanded : []);
+
+      var prev = this.previous(v);
+      var publishBtn = !v.is_active ? h('button', { class: 'btn btn--primary', type: 'button', onClick: function () { self.publish(v, this); } }, icon('checkCircle'), t('cl.makeActive')) : null;
+      var applyBtn = h('button', { class: v.is_active ? 'btn btn--primary' : 'btn', type: 'button', onClick: function () {
+        Promise.all([self.ensureConfig(act), self.ensureConfig(prev)]).then(function () {
+          CQA.openApplyDialog({ version: v, active: act, baseline: act && act.id !== v.id ? act : prev });
+        });
+      } }, icon('flash'), t('cl.apply'));
+      var cmp = !v.is_active && act ? h('a', { class: 'btn btn--subtle', href: '#/checklists/' + cid + '/diff/' + act.id + '/' + v.id }, icon('compare'), t('cl.compareWithActive'))
+        : prev ? h('a', { class: 'btn btn--subtle', href: '#/checklists/' + cid + '/diff/' + prev.id + '/' + v.id }, icon('compare'), t('cl.compareWithPrev', { v: prev.version })) : null;
+
+      this.notice = h('div', { class: 'stack' });
+      if (this.query && this.query.saved) {
+        this.notice.appendChild(ui.msgbar('success', t('cl.savedTitle', { v: v.version }), t(v.is_active ? 'cl.savedActiveText' : 'cl.savedText'),
+          h('div', { class: 'row' }, publishBtn ? h('button', { class: 'btn btn--small btn--primary', type: 'button', onClick: function () { self.publish(v, this); } }, t('cl.makeActive')) : null)));
+      }
+      if (restored) {
+        this.notice.appendChild(ui.msgbar('info', t('cl.draftRestored'), null,
+          h('button', { class: 'btn btn--small', type: 'button', onClick: function () { CQA.store.set(self.draftKey(v), null, true); self.renderEditor(v); } }, t('cl.discard'))));
+      }
+      this.errorsBox = h('div', { 'aria-live': 'assertive' });
+
+      this.editor = document.createElement('cqa-checklist-editor');
+      this.editor.data = { config: this.draft, base: v.config, expanded: this.expanded };
+
+      this.comment = h('input', { class: 'input', id: 'cl-comment', placeholder: t('cl.commentPlaceholder'), value: (restored && saved.comment) || '', maxlength: '300' });
+      this.dirtyEl = h('span', { class: 'cl-savebar__status', 'aria-live': 'polite' });
+      this.resetBtn = h('button', { class: 'btn', type: 'button', onClick: function () { self.reset(); } }, t('cl.discard'));
+      this.saveBtn = h('button', { class: 'btn btn--primary', type: 'button', onClick: function () { self.save(); } }, icon('checkCircle'), t('cl.saveNew'));
+      var savebar = h('div', { class: 'cl-savebar', role: 'region', 'aria-label': t('cl.saveRegion') },
+        this.dirtyEl,
+        h('label', { class: 'sr-only', for: 'cl-comment' }, t('cl.comment')),
+        this.comment, this.resetBtn, this.saveBtn);
+
+      CQA.dom.replace(this.main,
+        h('section', { class: 'card cl-vhead' },
+          h('div', { class: 'row row--between' },
+            h('div', { class: 'stack', style: { gap: '2px' } },
+              h('div', { class: 'row' },
+                h('h2', { class: 't-subtitle1' }, t('cl.versionN', { v: v.version })),
+                v.is_active ? ui.badge(t('cl.active'), 'brand-filled', 'checkCircle') : null,
+                ui.badge(CQA.i18n.tx('vstatus.' + v.status, v.status), STATUS_TONE[v.status] || 'neutral')),
+              h('div', { class: 'muted t-caption1' }, t('cl.createdAt', { d: fmt.date(v.created_at) }) + (v.comment ? ' · ' + v.comment : ''))),
+            h('div', { class: 'row' }, cmp, publishBtn, applyBtn))),
+        this.notice, this.errorsBox, this.editor, savebar);
+
+      this.editor.addEventListener('cqa-change', function () { self.onChange(); });
+      this.comment.addEventListener('input', function () { self.persist(); });
+      this.onChange(true);
+    }
+
+    onChange(initial) {
+      var v = this.version;
+      var dirty = !U.sameJson(this.draft, v.config);
+      this.dirty = dirty;
+      var d = CQA.checklistDiff(v.config, this.draft);
+      var parts = [];
+      if (d.criteria.length) parts.push(t('cl.changedCriteria', { n: d.criteria.length, list: d.criteria.map(function (c) { return c.id; }).join(', ') }));
+      if (d.top.length) parts.push(t('cl.changedGeneral'));
+      this.dirtyEl.textContent = dirty ? t('cl.unsaved', { what: parts.join(' · ') }) : t('cl.noChanges');
+      this.dirtyEl.classList.toggle('is-dirty', dirty);
+      if (this.dirtyEl.parentNode) this.dirtyEl.parentNode.classList.toggle('is-dirty', dirty);
+      this.saveBtn.disabled = !dirty;
+      this.resetBtn.disabled = !dirty;
+      if (!initial) this.persist();
+    }
+
+    persist() {
+      if (!this.version) return;
+      var key = this.draftKey(this.version);
+      if (!this.dirty) { CQA.store.set(key, null, true); return; }
+      clearTimeout(this._persistT);
+      var self = this;
+      this._persistT = setTimeout(function () {
+        CQA.store.set(key, { config: self.draft, comment: self.comment.value, expanded: Array.from(self.expanded) }, true);
+      }, 300);
+    }
+
+    reset() {
+      var self = this;
+      ui.confirm(t('cl.discardTitle'), t('cl.discardText'), t('cl.discard'), true).then(function (ok) {
+        if (!ok) return;
+        CQA.store.set(self.draftKey(self.version), null, true);
+        self.query = {};
+        self.renderEditor(self.version);
+      });
+    }
+
+    humanLoc(loc) {
+      var m = /^criteria\.(\d+)(?:\.(\w+))?(?:\.(\d+))?(?:\.(\w+))?/.exec(loc);
+      if (m) {
+        var c = this.draft.criteria[Number(m[1])];
+        var s = t('cl.locCriterion', { id: c ? c.id : '#' + (Number(m[1]) + 1) });
+        if (m[2]) s += ' · ' + CQA.i18n.tx('field.' + m[2], m[2]);
+        if (m[3] != null) s += ' ' + (Number(m[3]) + 1);
+        return s;
+      }
+      var top = loc.split('.')[0];
+      return CQA.i18n.tx('field.' + top, loc);
+    }
+
+    showErrors(errs, title) {
+      var self = this;
+      this.editor.clearErrors();
+      var first = this.editor.showErrors(errs);
+      CQA.dom.replace(this.errorsBox, ui.msgbar('danger', title || t('cl.errorsTitle', { n: errs.length }),
+        h('ul', null, errs.slice(0, 8).map(function (e) { return h('li', null, h('b', null, self.humanLoc(e.loc) + ': '), e.msg); }),
+          errs.length > 8 ? h('li', null, t('cl.moreErrors', { n: errs.length - 8 })) : null)));
+      var target = first || this.errorsBox;
+      CQA.dom.scrollIntoPane(target, { block: 'start' });
+      var ctl = target.querySelector && target.querySelector('[aria-invalid="true"]');
+      if (ctl) ctl.focus({ preventScroll: true });
+    }
+
+    save() {
+      var self = this, v = this.version;
+      CQA.dom.clear(this.errorsBox);
+      var errs = CQA.scoring.validateConfig(this.draft);
+      if (errs.length) { this.showErrors(errs); return; }
+      this.editor.clearErrors();
+      this.saveBtn.disabled = true;
+      CQA.dom.replace(this.saveBtn, ui.spinner(), t('cl.saving'));
+      var comment = this.comment.value.trim() || null;
+      CQA.api.createChecklistVersion(this.cid, this.draft, comment).then(function (nv) {
+        CQA.store.set(self.draftKey(v), null, true);
+        if (!nv.config) nv.config = U.deepClone(self.draft);
+        self.versions.unshift(nv);
+        self.versions.sort(function (a, b) { return b.version - a.version; });
+        ui.toast(t('cl.savedTitle', { v: nv.version }), { tone: 'success' });
+        CQA.router.go('/checklists/' + encodeURIComponent(self.cid) + '/v/' + nv.id, { saved: 1 });
+      }, function (err) {
+        self.saveBtn.disabled = false;
+        CQA.dom.replace(self.saveBtn, icon('checkCircle'), t('cl.saveNew'));
+        var ve = CQA.api.validationErrors(err);
+        if (ve.length) self.showErrors(ve, t('cl.serverErrors'));
+        else CQA.dom.replace(self.errorsBox, ui.msgbar('danger', t('cl.saveFailed'), err.message));
+      });
+    }
+
+    publish(v, btn) {
+      var self = this;
+      if (this.dirty) {
+        ui.toast(t('cl.publishDirty'), { tone: 'warning' });
+        return;
+      }
+      if (btn) btn.disabled = true;
+      CQA.api.publishVersion(v.id).then(function (pv) {
+        self.versions.forEach(function (x) { x.is_active = x.id === v.id; if (x.id === v.id && pv && pv.status) x.status = pv.status; });
+        ui.toast(t('cl.published', { v: v.version }), { tone: 'success', action: { label: t('cl.apply'), onClick: function () {
+          var prev = self.previous(v);
+          self.ensureConfig(prev).then(function () { CQA.openApplyDialog({ version: v, active: v, baseline: prev }); });
+        } } });
+        self.query = {};
+        CQA.router.setQuery({});
+        self.renderAll();
+      }, function (err) {
+        if (btn) btn.disabled = false;
+        ui.toast(t('cl.publishFailed'), { tone: 'error', detail: err.message });
+      });
+    }
+
+    // ------------------------------------------------------------ сравнение версий
+    renderDiff(a, b) {
+      var self = this;
+      var cid = encodeURIComponent(this.cid);
+      if (!a || !b) { CQA.dom.replace(this.main, ui.empty(t('cl.versionNotFound'), null, null, 'warning')); return; }
+      document.title = t('diff.title', { a: a.version, b: b.version }) + ' · CQA';
+      var opt = function (sel) {
+        return self.versions.map(function (v) { return h('option', { value: v.id, selected: v.id === sel.id }, t('cl.versionN', { v: v.version }) + (v.is_active ? ' · ' + t('cl.active') : '')); });
+      };
+      var selA = h('select', { class: 'select', id: 'diff-a', 'aria-label': t('diff.a') }, opt(a));
+      var selB = h('select', { class: 'select', id: 'diff-b', 'aria-label': t('diff.b') }, opt(b));
+      var go = function () { CQA.router.go('/checklists/' + cid + '/diff/' + selA.value + '/' + selB.value); };
+      selA.addEventListener('change', go);
+      selB.addEventListener('change', go);
+      var box = h('div', { class: 'stack stack--l' }, ui.skeleton('card', 5));
+      CQA.dom.replace(this.main,
+        h('section', { class: 'card' },
+          h('div', { class: 'row diff-head' },
+            h('h2', { class: 't-subtitle1' }, t('diff.heading')),
+            h('span', { class: 'spacer' }),
+            h('label', { class: 'muted', for: 'diff-a' }, t('diff.from')), selA,
+            h('button', { class: 'btn btn--subtle btn--icon', type: 'button', 'aria-label': t('diff.swap'), title: t('diff.swap'),
+              onClick: function () { CQA.router.go('/checklists/' + cid + '/diff/' + selB.value + '/' + selA.value); } }, icon('arrowSort')),
+            h('label', { class: 'muted', for: 'diff-b' }, t('diff.to')), selB)),
+        box);
+      Promise.all([this.ensureConfig(a), this.ensureConfig(b)]).then(function () {
+        var d = document.createElement('cqa-checklist-diff');
+        d.data = { a: a, b: b };
+        CQA.dom.replace(box, d);
+      }, function (err) { CQA.dom.replace(box, ui.error(err, function () { self.renderDiff(a, b); })); });
+    }
+  }
+
+  customElements.define('cqa-page-checklist', CqaPageChecklist);
+})(window.CQA = window.CQA || {});
