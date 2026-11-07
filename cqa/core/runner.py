@@ -145,7 +145,9 @@ async def process_run(con: sqlite3.Connection, run_id: int, conv_concurrency: in
                 v = await judge_criterion(conv, cfg, crit, profile, ctx, con)
             except Exception as e:  # noqa: BLE001 — упавшая единица не останавливает прогон
                 log.exception("judge failed: %s %s", conv.uid, crit.id)
-                v = CriterionVerdict(criterion_id=crit.id, verdict="", status="failed", error=f"{type(e).__name__}: {e}"[:500])
+                from cqa.llm.redact import redact
+                v = CriterionVerdict(criterion_id=crit.id, verdict="", status="failed",
+                                     error=redact(f"{type(e).__name__}: {e}")[:500])
         _save_verdict(con, run_id, row["id"], v)
 
     async def one(ev) -> None:
@@ -165,7 +167,7 @@ async def process_run(con: sqlite3.Connection, run_id: int, conv_concurrency: in
             ).fetchall()
             if rows:
                 await judge_row(conv, rows[0])          # прогрев общего префикса в кэше провайдера
-                if len(rows) > 1 and not _last_cache_hit(con, rows[0]["id"]):
+                if len(rows) > 1 and profile.provider != "fake" and not _last_cache_hit(con, rows[0]["id"]):
                     await asyncio.sleep(2.0)            # кэш Gemini появляется не сразу (замер: параллельно cached=0)
                 await asyncio.gather(*(judge_row(conv, r) for r in rows[1:]))
             finalize_evaluation(con, ev["id"], cfg, channel=conv.channel)
@@ -265,8 +267,41 @@ def finalize_evaluation(con, eval_id: int, cfg: ChecklistConfig, channel: str | 
              int(review > 0), agg["cost"], agg["lat"], now_iso(), eval_id),
         )
         uid = con.execute("SELECT uid FROM evaluations WHERE id=?", (eval_id,)).fetchone()["uid"]
+        prev = con.execute("SELECT current_evaluation_id FROM conversations WHERE uid=?", (uid,)).fetchone()
+        prev_eval = prev["current_evaluation_id"] if prev else None
         con.execute("UPDATE conversations SET current_evaluation_id=? WHERE uid=?", (eval_id, uid))
+        if prev_eval and prev_eval != eval_id:
+            _carry_over_decisions(con, prev_eval, eval_id)
     recompute_final(con, eval_id, cfg, channel=channel)
+
+
+def _carry_over_decisions(con, prev_eval: int, new_eval: int) -> int:
+    """Решения по апелляциям переносятся на новую оценку, если по критерию не изменились ни вердикт модели,
+    ни сам критерий (хэш). Иначе после перепрогона решение проверяющего пропало бы из карточки."""
+    n = 0
+    rows = con.execute(
+        "SELECT a.*, d.action, d.new_verdict, d.reason, d.reviewer, d.make_precedent, d.created_at AS d_created,"
+        " cr.verdict AS old_verdict, cr.criterion_hash AS old_hash"
+        " FROM appeals a JOIN decisions d ON d.appeal_id=a.id JOIN criterion_results cr ON cr.id=a.criterion_result_id"
+        " WHERE a.evaluation_id=? AND a.status='decided'", (prev_eval,)).fetchall()
+    for r in rows:
+        new_cr = con.execute("SELECT id, verdict, criterion_hash FROM criterion_results WHERE evaluation_id=? AND criterion_id=?",
+                             (new_eval, r["criterion_id"])).fetchone()
+        if not new_cr or new_cr["verdict"] != r["old_verdict"] or new_cr["criterion_hash"] != r["old_hash"]:
+            continue
+        aid = con.execute(
+            "INSERT INTO appeals(evaluation_id, criterion_result_id, criterion_id, comment, counter_evidence_json, author_role,"
+            " status, ai_opinion_json, ai_call_id, created_at) VALUES (?,?,?,?,?,?, 'decided', ?,?,?)",
+            (new_eval, new_cr["id"], r["criterion_id"], r["comment"], r["counter_evidence_json"], r["author_role"],
+             r["ai_opinion_json"], r["ai_call_id"], r["created_at"]),
+        ).lastrowid
+        con.execute(
+            "INSERT INTO decisions(appeal_id, action, new_verdict, reason, reviewer, make_precedent, created_at)"
+            " VALUES (?,?,?,?,?,?,?)",
+            (aid, r["action"], r["new_verdict"], r["reason"], r["reviewer"], r["make_precedent"], r["d_created"]),
+        )
+        n += 1
+    return n
 
 
 def recompute_final(con, eval_id: int, cfg: ChecklistConfig | None = None, channel: str | None = None) -> float | None:
@@ -297,8 +332,10 @@ def retry_failed(con, run_id: int) -> int:
     with tx(con):
         n = con.execute("UPDATE criterion_results SET status='pending', error=NULL WHERE status='failed' AND evaluation_id IN"
                         " (SELECT id FROM evaluations WHERE run_id=?)", (run_id,)).rowcount
-        con.execute("UPDATE evaluations SET status='pending' WHERE run_id=? AND status IN ('partial','failed')", (run_id,))
-        con.execute("UPDATE runs SET status='queued', units_failed=MAX(0, units_failed-?) WHERE id=?", (n, run_id))
+        if n:
+            con.execute("UPDATE evaluations SET status='pending' WHERE run_id=? AND status IN ('partial','failed')", (run_id,))
+            con.execute("UPDATE runs SET status='queued', units_failed=MAX(0, units_failed-?) WHERE id=? AND status!='cancelled'",
+                        (n, run_id))
     return n
 
 
