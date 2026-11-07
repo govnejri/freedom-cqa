@@ -24,6 +24,8 @@ def connect(db_path: Path | None = None) -> sqlite3.Connection:
     con.execute("PRAGMA journal_mode=WAL")
     con.execute("PRAGMA busy_timeout=5000")
     con.execute("PRAGMA foreign_keys=ON")
+    # LIKE в SQLite регистронезависим только для ASCII; для кириллицы и казахского — свой lower()
+    con.create_function("py_lower", 1, lambda s: s.lower() if isinstance(s, str) else s, deterministic=True)
     return con
 
 

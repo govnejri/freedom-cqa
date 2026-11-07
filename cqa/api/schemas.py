@@ -154,14 +154,14 @@ class ValidationErrorDTO(BaseModel):
 class AppealCreateDTO(BaseModel):
     evaluation_id: int
     criterion_id: str
-    comment: str
+    comment: str = Field(max_length=2000)
     counter_evidence: list[str] = Field(default_factory=list)   # ["m12"]
 
 
 class DecisionCreateDTO(BaseModel):
     action: str                               # confirm | change
     new_verdict: str | None = None
-    reason: str
+    reason: str = Field(max_length=2000)
     make_precedent: bool = False
 
 

@@ -50,6 +50,10 @@ def create_appeal(con: sqlite3.Connection, dto: AppealCreateDTO, author_role: st
     ev = con.execute("SELECT id, uid FROM evaluations WHERE id=?", (dto.evaluation_id,)).fetchone()
     if ev is None:
         raise AppealNotFound(f"оценка {dto.evaluation_id} не найдена", "evaluation_id")
+    cur = con.execute("SELECT current_evaluation_id FROM conversations WHERE uid=?", (ev["uid"],)).fetchone()
+    if cur and cur["current_evaluation_id"] and cur["current_evaluation_id"] != ev["id"]:
+        raise AppealInvalid("Эта оценка устарела: у диалога есть более новая. Оспорьте актуальную оценку.",
+                            "evaluation_id")
     cr = con.execute("SELECT id, status, verdict FROM criterion_results WHERE evaluation_id=? AND criterion_id=?",
                      (dto.evaluation_id, dto.criterion_id)).fetchone()
     if cr is None:
@@ -197,9 +201,10 @@ def _precedent_fragment(con: sqlite3.Connection, uid: str, mids: list[str]) -> s
 
 
 def _precedent_mids(con: sqlite3.Connection, uid: str, evidence: list[str], counter: list[str],
-                    checked_range: list[str] | None) -> list[str]:
-    """Реплики для текста прецедента: доказательства → контрдоказательства → начало проверенного участка."""
-    for mids in (evidence, counter):
+                    checked_range: list[str] | None, prefer_counter: bool = False) -> list[str]:
+    """Реплики для текста прецедента. Если проверяющий изменил вердикт — сначала контрдоказательства
+    оператора (на них решение и основано), иначе доказательства модели; затем проверенный участок."""
+    for mids in ((counter, evidence) if prefer_counter else (evidence, counter)):
         if mids:
             return list(dict.fromkeys(mids))
     if checked_range:
@@ -264,7 +269,9 @@ def decide(con: sqlite3.Connection, appeal_id: int, dto: DecisionCreateDTO, revi
             con.execute("UPDATE decisions SET new_final_total=? WHERE id=?", (new_total, dec_id))
             con.execute("UPDATE appeals SET status='decided' WHERE id=?", (appeal_id,))
             if dto.make_precedent:
-                mids = _precedent_mids(con, ev["uid"], evidence, counter, checked_range)
+                mids = _precedent_mids(con, ev["uid"], evidence, counter, checked_range,
+                                       prefer_counter=(action == "change"))
+                mids = sorted(mids, key=lambda m: int(m[1:]) if m[1:].isdigit() else 0)   # порядок переписки
                 con.execute(
                     "INSERT INTO precedents(appeal_id, criterion_id, fragment, verdict, why, added_in_version_id,"
                     " created_at) VALUES (?,?,?,?,?, NULL, ?)",

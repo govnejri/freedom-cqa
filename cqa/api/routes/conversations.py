@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import sqlite3
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import HTTPException, APIRouter, Depends, Query
 from fastapi.responses import FileResponse
 
 from cqa.api.deps import get_con, not_found
@@ -67,6 +67,11 @@ async def list_conversations(
     if channel:
         where.append("c.channel = ?")
         args.append(channel)
+    for name, val in (("score_min", score_min), ("score_max", score_max)):
+        if val is not None and not 0 <= val <= 100:
+            raise HTTPException(422, detail=[{"loc": name, "msg": "балл должен быть от 0 до 100"}])
+    if score_min is not None and score_max is not None and score_min > score_max:
+        raise HTTPException(422, detail=[{"loc": "score_min", "msg": "«от» больше, чем «до»"}])
     if score_min is not None:
         where.append(f"{_SCORE} >= ?")
         args.append(score_min)
@@ -84,7 +89,7 @@ async def list_conversations(
                      " ON x.id = a.evaluation_id WHERE x.uid = c.uid)")
     if q and q.strip():
         pat = "%" + q.strip().replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%"
-        where.append("(c.uid LIKE ? ESCAPE '\\' OR c.operator_name LIKE ? ESCAPE '\\')")
+        where.append("(py_lower(c.uid) LIKE py_lower(?) ESCAPE '\\' OR py_lower(c.operator_name) LIKE py_lower(?) ESCAPE '\\')")
         args += [pat, pat]
     sql = _LIST_SQL + (" WHERE " + " AND ".join(where) if where else "")
     sql += " ORDER BY " + _SORTS.get((sort or "id").strip(), _SORTS["id"])

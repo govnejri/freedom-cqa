@@ -73,7 +73,8 @@ def schedule_audio(request: Request, group_id: str) -> None:
 
 
 @router.get("/datasets")
-async def list_datasets(con: sqlite3.Connection = Depends(get_con)) -> list[dict[str, Any]]:
+async def list_datasets(include_service: bool = False,
+                        con: sqlite3.Connection = Depends(get_con)) -> list[dict[str, Any]]:
     rows = con.execute(
         "SELECT d.group_id, d.source, d.fetched_at, d.total_records,"
         " (SELECT COUNT(*) FROM conversations c WHERE c.group_id = d.group_id) AS n_conversations,"
@@ -82,7 +83,9 @@ async def list_datasets(con: sqlite3.Connection = Depends(get_con)) -> list[dict
         " (SELECT COUNT(*) FROM conversations c WHERE c.group_id = d.group_id AND c.audio_status != 'none') AS n_audio,"
         " (SELECT COUNT(*) FROM conversations c WHERE c.group_id = d.group_id AND c.audio_status = 'ready')"
         "   AS n_audio_ready"
-        " FROM datasets d ORDER BY d.group_id").fetchall()
+        " FROM datasets d"
+        + ("" if include_service else " WHERE d.source NOT IN ('autotest', 'trainer')")
+        + " ORDER BY d.group_id").fetchall()
     return [dict(r) for r in rows]
 
 

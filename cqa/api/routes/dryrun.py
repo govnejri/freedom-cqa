@@ -80,10 +80,13 @@ def current_group(con: sqlite3.Connection) -> str | None:
     return r["group_id"] if r else None
 
 
-def sample_uids(con: sqlite3.Connection, group: str, n: int) -> list[str]:
-    """n разнородных диалогов группы: по кругу через языки и каналы, внутри — разные семьи сценариев (по эталону).
+def sample_uids(con: sqlite3.Connection, group: str, n: int, criteria: list[str] | None = None,
+                cfg: Any = None) -> list[str]:
+    """n диалогов группы для пробного прогона.
 
-    Сначала диалоги с текущей оценкой (есть «было»), затем остальные.
+    Если известны изменённые критерии — сначала диалоги, где они сейчас НЕ выполнены (~60%: там правка
+    критерия скорее всего что-то изменит), затем, для контраста, где выполнены. Внутри каждой части —
+    разнообразие по языкам, каналам и семьям сценариев. Без оценки — в конце.
     """
     from cqa.quality.autotest import diverse_order
 
@@ -92,12 +95,41 @@ def sample_uids(con: sqlite3.Connection, group: str, n: int) -> list[str]:
     rows = con.execute(
         "SELECT uid, external_id, language, channel, current_evaluation_id FROM conversations"
         " WHERE group_id=? AND parent_uid IS NULL ORDER BY external_id", (group,)).fetchall()
-    out: list[str] = []
-    for part in ([r for r in rows if r["current_evaluation_id"]], [r for r in rows if not r["current_evaluation_id"]]):
-        ordered = diverse_order(part, stratum=lambda r: (r["language"], r["channel"]),
-                                family=lambda r: fams.get(r["external_id"]) or r["external_id"])
-        out += [r["uid"] for r in ordered]
-    return out[:n]
+
+    def diverse(part):
+        return [r["uid"] for r in diverse_order(part, stratum=lambda r: (r["language"], r["channel"]),
+                                                family=lambda r: fams.get(r["external_id"]) or r["external_id"])]
+
+    evaluated = [r for r in rows if r["current_evaluation_id"]]
+    unevaluated = [r for r in rows if not r["current_evaluation_id"]]
+    if not criteria or cfg is None:
+        return (diverse(evaluated) + diverse(unevaluated))[:n]
+
+    def violated(r) -> bool:
+        for cid in criteria:
+            try:
+                crit = cfg.criterion(cid)
+            except KeyError:
+                continue
+            v = con.execute("SELECT verdict FROM criterion_results WHERE evaluation_id=? AND criterion_id=?",
+                            (r["current_evaluation_id"], cid)).fetchone()
+            if v is None or not v["verdict"]:
+                continue
+            verdict = v["verdict"]
+            if crit.type == "flag" and verdict == "Да":
+                return True
+            if crit.type == "yes_no" and verdict == "Нет":
+                return True
+            if crit.type == "scale" and verdict != "N/A" and crit.top is not None and int(verdict) < crit.top:
+                return True
+        return False
+
+    bad = [r for r in evaluated if violated(r)]
+    good = [r for r in evaluated if not violated(r)]
+    k = min(len(bad), max(1, round(n * 0.6)))
+    out = diverse(bad)[:k] + diverse(good)
+    out += [u for u in diverse(bad)[k:] if u not in out] + diverse(unevaluated)
+    return list(dict.fromkeys(out))[:n]
 
 
 def _profile(request: Request, con: sqlite3.Connection, name: str | None) -> str:
@@ -133,7 +165,8 @@ async def dry_run(vid: int, request: Request, body: DryRunBody | None = None,
     else:
         criteria, compared_with = changed_criteria(con, cfg, meta)
         if not criteria:
-            raise invalid("criteria", "версия не отличается от активной по критериям — укажите criteria явно")
+            raise invalid("criteria", "Эта версия не отличается от активной — проверять нечего. "
+                                      "Измените критерий и сохраните новую версию.")
 
     if body.uids:
         uids = list(dict.fromkeys(body.uids))
@@ -147,7 +180,7 @@ async def dry_run(vid: int, request: Request, body: DryRunBody | None = None,
         group = body.group or current_group(con)
         if not group:
             raise invalid("group", "нет загруженных диалогов")
-        uids = sample_uids(con, group, body.sample)
+        uids = sample_uids(con, group, body.sample, criteria, cfg)
         if not uids:
             raise invalid("group", f"в группе {group} нет диалогов")
 
