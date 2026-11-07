@@ -51,7 +51,11 @@
       var body = h('div', { class: 'crit__body' });
       this.appendChild(body);
 
-      // ---- вес
+      // ---- вес (+ отметка «проверено второй моделью»)
+      var agreed = cr.second_opinion && cr.second_opinion.verdict && cr.second_opinion.agree !== false;
+      var checkedMark = agreed ? h('span', { class: 'crit__checked', title: t('crit.secondAgreeTitle', { m: cr.second_opinion.model || cr.second_opinion.profile || '' }) },
+        icon('check', 'icon--16'), t('crit.secondAgree')) : null;
+      if (isFlag && checkedMark) body.appendChild(h('div', { class: 'crit__weight t-caption1' }, checkedMark));
       if (!isFlag) {
         var eff = score ? score.effective_weight : null;
         var wl = h('div', { class: 'crit__weight t-caption1' }, t('crit.weight', { w: fmt.num(cr.weight) }));
@@ -59,6 +63,7 @@
         else if (eff != null && Math.abs(eff - cr.weight) >= 0.005) {
           wl.appendChild(h('span', { title: t('crit.effWeightTitle') }, ' → ', h('b', null, fmt.num(eff)), ' ', t('crit.afterRedistribution')));
         }
+        if (checkedMark) wl.appendChild(checkedMark);
         body.appendChild(wl);
       }
 
@@ -113,13 +118,17 @@
           h('div', { class: 'disclosure__body' }, h('div', { class: 'quote' }, cr.how_to_fix))));
       }
 
-      // ---- второе мнение
-      if (cr.second_opinion && cr.second_opinion.verdict) {
-        var so = cr.second_opinion;
-        body.appendChild(h('div', { class: 'crit__second' },
-          h('div', { class: 'row' }, icon('sparkle', 'icon--16'), h('span', { class: 't-caption1-strong' }, t('crit.secondOpinion')),
-            CQA.verdict(so.verdict, cr.type, d.top), so.model ? h('span', { class: 'muted t-caption1' }, so.model) : null),
-          so.explanation ? h('div', { class: 't-caption1 subtle' }, so.explanation) : null));
+      // ---- второе мнение: расхождение — заметный блок, согласие — отметка в строке веса
+      var so = cr.second_opinion && cr.second_opinion.verdict ? cr.second_opinion : null;
+      if (so && so.agree === false) {
+        body.appendChild(h('div', { class: 'crit__second crit__second--disagree', role: 'note' },
+          h('div', { class: 'row' }, icon('warning', 'icon--16'),
+            h('span', { class: 't-caption1-strong' }, t('crit.secondDisagree')),
+            CQA.verdict(so.verdict, cr.type, d.top),
+            so.near ? h('span', { class: 'muted t-caption1' }, t('eval.near')) : null,
+            so.model ? h('span', { class: 'muted t-caption1' }, so.model) : null),
+          so.explanation ? h('div', { class: 't-caption1 subtle' }, so.explanation) : null,
+          d.canAppeal !== false ? h('div', { class: 't-caption1 muted' }, t('crit.secondDecide')) : null));
       }
 
       // ---- рассуждение модели

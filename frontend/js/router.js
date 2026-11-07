@@ -11,7 +11,12 @@
     { re: /^\/checklists\/([^/]+)\/?$/, tag: 'cqa-page-checklist', nav: 'checklist', keys: ['cid'] },
     { re: /^\/checklists\/([^/]+)\/v\/(\d+)$/, tag: 'cqa-page-checklist', nav: 'checklist', keys: ['cid', 'vid'] },
     { re: /^\/checklists\/([^/]+)\/diff\/(\d+)\/(\d+)$/, tag: 'cqa-page-checklist', nav: 'checklist', keys: ['cid', 'a', 'b'] },
-    { re: /^\/runs\/(\d+)$/, tag: 'cqa-page-run', nav: 'dashboard', keys: ['id'] }
+    { re: /^\/runs\/(\d+)$/, tag: 'cqa-page-run', nav: 'dashboard', keys: ['id'] },
+    { re: /^\/runs\/(\d+)\/diff$/, tag: 'cqa-page-run-diff', nav: 'checklist', keys: ['id'] },
+    { re: /^\/risks\/?$/, tag: 'cqa-page-risks', nav: 'risks', keys: [] },
+    { re: /^\/log\/(\d+)$/, tag: 'cqa-page-log', nav: 'conversations', keys: ['id'] },
+    { re: /^\/quality\/?$/, tag: 'cqa-page-quality', nav: 'quality', keys: [] },
+    { re: /^\/settings\/?$/, tag: 'cqa-page-settings', nav: 'settings', keys: [] }
   ];
 
   var outlet = null;
@@ -75,6 +80,8 @@
     el.params = params;
     el.query = p.query;
     outlet.textContent = '';
+    // окна (ui.modal) живут в body: при смене страницы закрываем оставшиеся — как по Esc
+    Array.prototype.forEach.call(document.querySelectorAll('dialog.dialog'), function (d) { d.dispatchEvent(new Event('cancel')); });
     outlet.appendChild(el);
     current = { route: route, path: p.path, params: params, query: p.query, el: el };
     if (!isFirst) {

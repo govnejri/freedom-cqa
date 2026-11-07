@@ -138,3 +138,132 @@ def test_i18n_keys_present():
         used |= set(re.findall(r"push\([^,]+,\s*'(val\.[\w.]+)'", text))
     missing = sorted(k for k in used if k not in keys and not k.endswith("."))
     assert not missing, missing
+
+
+# ---------------------------------------------------------------- P1: инсайты, качество, журнал, второе мнение, «было/стало»
+
+def test_p1_mock_static_formats():
+    """frontend/mock/p1.json — реальные ответы роутов P1 в их форматах (генератор frontend/mock/generate_p1.py)."""
+    from cqa.api.schemas import LLMCallDTO
+
+    p1 = load("p1")
+    s = p1["settings"]
+    assert set(s) >= {"roles", "defaults", "overrides", "fake", "profiles"}
+    assert any(p["name"] == "local" and p["local"] for p in s["profiles"])
+    q = p1["quality"]
+    assert q["default"] in q["reports"]
+    for r in q["reports"].values():
+        assert set(r) >= {"run", "split", "ceiling", "criteria", "overall", "total", "traps", "by", "cost"}
+        for c in r["criteria"]:
+            assert {"criterion", "exact_rate", "compatible_rate", "kappa", "ceiling_exact_rate", "ceiling_kappa"} <= set(c)
+    for r in p1["quality_runs"]:
+        assert {"id", "model", "local", "n", "exact_rate", "kappa_mean", "mae", "cost_per_dialog_usd"} <= set(r)
+    a = p1["autotests"]
+    assert {"total", "by_mutation", "by_language", "injection", "failed"} <= set(a)
+    RunDTO.model_validate(p1["dry_run_diff"]["run"])
+    assert p1["dry_run_diff"]["summary"]["verdicts_compared"] >= 1
+    calls = p1["calls"]
+    evals = {str(e["id"]) for e in load("evaluations").values()}
+    assert set(calls["by_evaluation"]) <= evals
+    for lst in calls["by_evaluation"].values():
+        for c in lst:
+            LLMCallDTO.model_validate(c)
+            assert str(c["id"]) in calls["details"]
+    for d in calls["details"].values():
+        assert d["response_text"] is None or 0 <= d["response_text"] < len(calls["strings"])
+    for op in p1["appeal_opinions"].values():
+        assert op["appeal_supported"] in ("да", "частично", "нет") and op["blind"] is True
+
+
+_P1_HARNESS = r"""
+const fs = require('fs'), path = require('path');
+const FE = process.argv[1];
+global.window = global; window.CQA = {};
+global.HTMLElement = class {}; global.customElements = { define() {} };
+global.document = { getElementById: (id) => ({ textContent: fs.readFileSync(path.join(FE, 'mock', id.replace(/^mock-/, '') + '.json'), 'utf8') }) };
+for (const f of ['js/i18n.js', 'js/util.js', 'js/scoring.js', 'js/mock.js', 'js/api.js', 'components/checklist-diff.js'])
+  eval(fs.readFileSync(path.join(FE, f), 'utf8'));
+const M = window.CQA.mock;
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+(async () => {
+  const out = {};
+  const call = (m, p, o) => M.handle(m, p, o || {});
+  out.risks = await call('GET', '/insights/risks', { query: { group: 'DEV' } });
+  const crid = out.risks.items[0].criterion_result_id;
+  out.case1 = await call('POST', '/insights/risks/' + crid + '/compliance', { body: {} });
+  out.case2 = await call('POST', '/insights/risks/' + crid + '/compliance', { body: {} });
+  out.risksAfter = await call('GET', '/insights/risks', { query: {} });
+  out.unanswered = await call('GET', '/insights/unanswered', { query: { group: 'DEV' } });
+  out.reasons = await call('GET', '/insights/reasons', { query: {} });
+  out.summary = await call('GET', '/insights/summary', { query: { group: 'DEV' } });
+  out.signals = await call('POST', '/insights/signals', { body: { group: 'DEV' } });
+  out.quality = await call('GET', '/quality', { query: {} });
+  out.qualitySlice = await call('GET', '/quality', { query: { split: 'holdout', by: 'channel' } });
+  out.settings = await call('PUT', '/settings', { body: { roles: { judge: 'gemini-flash-37' } } });
+  out.settingsReset = await call('PUT', '/settings', { body: { roles: { judge: null } } });
+  const ev = await call('GET', '/evaluations/102');
+  out.evaluation = ev;
+  out.calls = await call('GET', '/evaluations/102/calls');
+  out.call = await call('GET', '/llm-calls/' + out.calls[0].id);
+  out.appeal = await call('POST', '/appeals/2/second-opinion');
+  const run = await call('POST', '/checklist-versions/1/dry-run', { body: { sample: 10 } });
+  out.run = run;
+  out.diff0 = await call('GET', '/runs/' + run.id + '/diff');
+  await sleep(10500);
+  out.diff1 = await call('GET', '/runs/' + run.id + '/diff');
+  const active = (await call('GET', '/checklists/freedom-cqa/versions')).find((v) => v.is_active);
+  const same = await call('POST', '/checklists/freedom-cqa/versions', { body: { config: active.config, comment: 'копия' } });
+  try { await call('POST', '/checklist-versions/' + same.id + '/dry-run', { body: {} }); out.sameErr = null; } catch (e) { out.sameErr = e.status; }
+  console.log(JSON.stringify(out));
+})().catch((e) => { console.error(e && e.stack || e); process.exit(1); });
+"""
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="нет node")
+def test_p1_mock_routes_follow_dtos():
+    """Мок-маршруты P1 (frontend/js/mock.js) отвечают в форматах DTO бэкенда."""
+    from cqa.api.routes.insights import (
+        ComplianceCaseDTO,
+        ReasonsDTO,
+        RisksDTO,
+        SignalsRunDTO,
+        SummaryDTO,
+        UnansweredDTO,
+    )
+    from cqa.api.schemas import LLMCallDTO
+
+    r = subprocess.run(["node", "-e", _P1_HARNESS, str(FRONTEND)], capture_output=True, text=True, timeout=60)
+    assert r.returncode == 0, r.stderr
+    out = json.loads(r.stdout)
+    risks = RisksDTO.model_validate(out["risks"])
+    assert risks.total >= 1 and all(it.verdict == "Да" and it.evidence for it in risks.items)
+    assert sum(c.count for c in risks.by_category) == risks.total
+    c1, c2 = ComplianceCaseDTO.model_validate(out["case1"]), ComplianceCaseDTO.model_validate(out["case2"])
+    assert c1.created and not c2.created and c1.id == c2.id
+    assert any(it.compliance for it in RisksDTO.model_validate(out["risksAfter"]).items)
+    un = UnansweredDTO.model_validate(out["unanswered"])
+    assert un.total_questions == sum(t.n_questions for t in un.topics)
+    reasons = ReasonsDTO.model_validate(out["reasons"])
+    assert abs(sum(x.share for x in reasons.reasons) - 1) < 0.01
+    s = SummaryDTO.model_validate(out["summary"])
+    assert s.risks_open_compliance == 1 and s.gross_count == risks.total
+    SignalsRunDTO.model_validate(out["signals"])
+    assert out["quality"]["run"] and out["quality"]["criteria"]
+    assert out["qualitySlice"]["warnings"]                     # среза нет в моке — честное предупреждение
+    assert out["settings"]["roles"]["judge"] == "gemini-flash-37" and out["settings"]["overrides"] == {"judge": "gemini-flash-37"}
+    assert out["settingsReset"]["overrides"] == {}
+    ev = EvaluationDTO.model_validate(out["evaluation"])
+    assert all(c.allowed_verdicts for c in ev.criteria)
+    assert all(c.scale_top for c in ev.criteria if c.type == "scale")
+    assert any(c.second_opinion for c in ev.criteria) and ev.n_llm_calls == len(out["calls"])
+    for c in out["calls"]:
+        LLMCallDTO.model_validate(c)
+    call = LLMCallDTO.model_validate(out["call"])
+    assert call.request and call.request["messages"] and call.response_text
+    appeal = AppealDTO.model_validate(out["appeal"])
+    assert appeal.ai_opinion and appeal.ai_opinion["appeal_supported"] in ("да", "частично", "нет")
+    run = RunDTO.model_validate(out["run"])
+    assert run.kind == "dry_run"
+    assert out["diff0"]["summary"]["completed"] < out["diff1"]["summary"]["completed"] == out["diff1"]["summary"]["dialogs"]
+    assert out["diff1"]["run"]["status"] == "done"
+    assert out["sameErr"] == 422                               # версия не отличается от активной — как в API

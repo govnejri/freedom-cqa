@@ -115,13 +115,17 @@
           CQA.openApplyDialog({ version: v, active: act, baseline: act && act.id !== v.id ? act : prev });
         });
       } }, icon('flash'), t('cl.apply'));
+      var dryBtn = h('button', { class: v.is_active ? 'btn' : 'btn btn--primary', type: 'button', title: t('cl.dryRunTitle'), onClick: function () { self.dryRun(v, this); } }, icon('compare'), t('cl.dryRun'));
+      if (!v.is_active && publishBtn) publishBtn.className = 'btn';
       var cmp = !v.is_active && act ? h('a', { class: 'btn btn--subtle', href: '#/checklists/' + cid + '/diff/' + act.id + '/' + v.id }, icon('compare'), t('cl.compareWithActive'))
         : prev ? h('a', { class: 'btn btn--subtle', href: '#/checklists/' + cid + '/diff/' + prev.id + '/' + v.id }, icon('compare'), t('cl.compareWithPrev', { v: prev.version })) : null;
 
       this.notice = h('div', { class: 'stack' });
       if (this.query && this.query.saved) {
-        this.notice.appendChild(ui.msgbar('success', t('cl.savedTitle', { v: v.version }), t(v.is_active ? 'cl.savedActiveText' : 'cl.savedText'),
-          h('div', { class: 'row' }, publishBtn ? h('button', { class: 'btn btn--small btn--primary', type: 'button', onClick: function () { self.publish(v, this); } }, t('cl.makeActive')) : null)));
+        this.notice.appendChild(ui.msgbar('success', t('cl.savedTitle', { v: v.version }), t(v.is_active ? 'cl.savedActiveText' : 'cl.savedDryText'),
+          h('div', { class: 'row' },
+            h('button', { class: 'btn btn--small btn--primary', type: 'button', onClick: function () { self.dryRun(v, this); } }, icon('compare'), t('cl.dryRun')),
+            publishBtn ? h('button', { class: 'btn btn--small', type: 'button', onClick: function () { self.publish(v, this); } }, t('cl.makeActive')) : null)));
       }
       if (restored) {
         this.notice.appendChild(ui.msgbar('info', t('cl.draftRestored'), null,
@@ -150,12 +154,40 @@
                 v.is_active ? ui.badge(t('cl.active'), 'brand-filled', 'checkCircle') : null,
                 ui.badge(CQA.i18n.tx('vstatus.' + v.status, v.status), STATUS_TONE[v.status] || 'neutral')),
               h('div', { class: 'muted t-caption1' }, t('cl.createdAt', { d: fmt.date(v.created_at) }) + (v.comment ? ' · ' + v.comment : ''))),
-            h('div', { class: 'row' }, cmp, publishBtn, applyBtn))),
+            h('div', { class: 'row' }, cmp, dryBtn, publishBtn, applyBtn)),
+          this.dryList = h('div', { class: 'cl-dry t-caption1' })),
         this.notice, this.errorsBox, this.editor, savebar);
 
       this.editor.addEventListener('cqa-change', function () { self.onChange(); });
       this.comment.addEventListener('input', function () { self.persist(); });
       this.onChange(true);
+      this.loadDryRuns(v);
+    }
+
+    /** Пробные прогоны этой версии — ссылки на «было/стало». */
+    loadDryRuns(v) {
+      var box = this.dryList;
+      CQA.api.runs().then(function (runs) {
+        var list = (runs || []).filter(function (r) { return r.kind === 'dry_run' && r.checklist_version_id === v.id; });
+        if (!list.length || !box.isConnected) return;
+        CQA.dom.replace(box, h('span', { class: 'muted' }, t('cl.dryRuns')), list.slice(0, 5).map(function (r, i) {
+          return [i ? ' · ' : ' ', h('a', { href: '#/runs/' + r.id + '/diff' }, '#' + r.id), h('span', { class: 'muted' }, ' ' + fmt.date(r.created_at) + ' · ' + CQA.i18n.tx('runStatus.' + r.status, r.status))];
+        }));
+      }).catch(function () { /* список прогонов не критичен */ });
+    }
+
+    /** Пробный прогон на 10 диалогах по изменённым критериям → «было/стало». */
+    dryRun(v, btn) {
+      if (this.dirty) { ui.toast(t('cl.dryDirty'), { tone: 'warning' }); return; }
+      var label = btn ? Array.prototype.slice.call(btn.childNodes) : null;
+      if (btn) { btn.disabled = true; CQA.dom.replace(btn, ui.spinner(), t('dash.starting')); }
+      CQA.api.dryRun(v.id, { sample: 10 }).then(function (run) {
+        CQA.router.go('/runs/' + run.id + '/diff');
+      }, function (err) {
+        if (btn) { btn.disabled = false; CQA.dom.replace(btn, label); }
+        var ve = CQA.api.validationErrors(err);
+        ui.toast(t('cl.dryFailed'), { tone: 'error', detail: ve.length ? ve.map(function (x) { return x.msg; }).join('; ') : err.message, timeout: 12000 });
+      });
     }
 
     onChange(initial) {

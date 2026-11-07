@@ -88,6 +88,15 @@
     cursor: '<path d="m5 3.5 10 6-4.5 1.2L13 16l-2 1-2.5-5.3L5 14.5z"/>',
     database: '<ellipse cx="10" cy="5" rx="6" ry="2.2"/><path d="M4 5v10c0 1.2 2.7 2.2 6 2.2s6-1 6-2.2V5M4 10c0 1.2 2.7 2.2 6 2.2s6-1 6-2.2"/>',
     more: '<circle cx="5" cy="10" r=".9" fill="currentColor"/><circle cx="10" cy="10" r=".9" fill="currentColor"/><circle cx="15" cy="10" r=".9" fill="currentColor"/>',
+    shield: '<path d="M10 2.8 16 5v4.6c0 3.7-2.5 6.4-6 7.6-3.5-1.2-6-3.9-6-7.6V5z"/><path d="M10 6.8v3.8M10 13v.2"/>',
+    chart: '<path d="M3.5 3.5v13h13"/><path d="M7 13V9.5M10.5 13V6.5M14 13v-5"/>',
+    settings: '<circle cx="10" cy="10" r="2.4"/><path d="M10 2.8v2M10 15.2v2M2.8 10h2M15.2 10h2M4.9 4.9l1.4 1.4M13.7 13.7l1.4 1.4M4.9 15.1l1.4-1.4M13.7 6.3l1.4-1.4"/>',
+    send: '<path d="M3.5 10 16.5 3.5 13 16.5l-3.2-5.3z"/><path d="m9.8 11.2 6.7-7.7"/>',
+    question: '<circle cx="10" cy="10" r="7"/><path d="M8 8a2 2 0 1 1 2.8 1.8c-.5.3-.8.7-.8 1.3v.4M10 14v.2"/>',
+    cloud: '<path d="M6 15.5h8.2a3.3 3.3 0 0 0 .4-6.6A4.8 4.8 0 0 0 5.4 8 3.8 3.8 0 0 0 6 15.5z"/>',
+    server: '<rect x="3.5" y="3.5" width="13" height="5" rx="1"/><rect x="3.5" y="11.5" width="13" height="5" rx="1"/><path d="M6.5 6h.1M6.5 14h.1"/>',
+    key: '<circle cx="7" cy="12.5" r="3.2"/><path d="m9.3 10.2 6.7-6.7M13.5 6l2 2"/>',
+    code: '<path d="m7 6-4 4 4 4M13 6l4 4-4 4"/>',
     link: '<path d="M8.5 11.5a3 3 0 0 0 4.2 0l2.6-2.6a3 3 0 0 0-4.2-4.2l-.9.9M11.5 8.5a3 3 0 0 0-4.2 0l-2.6 2.6a3 3 0 0 0 4.2 4.2l.9-.9"/>'
   };
 
@@ -116,6 +125,23 @@
       return '$' + nf(v < 0.1 ? 4 : 2, v < 0.1 ? 4 : 2).format(v);
     },
     pct: function (v) { return v == null ? '—' : nf(0, 0).format(v * 100) + '%'; },
+    /** Доля с одним знаком: 0.9384 → «93,8%». */
+    pct1: function (v) { return v == null || isNaN(v) ? '—' : nf(0, 1).format(v * 100) + '%'; },
+    /** Со знаком: +1,25 / −2 / 0. */
+    signed: function (v, max) {
+      if (v == null || isNaN(v)) return '—';
+      var s = nf(0, max == null ? 2 : max).format(Math.abs(v));
+      return v > 0 ? '+' + s : v < 0 ? '−' + s : s;
+    },
+    /** Время ISO → «17:26:19». */
+    time: function (iso) {
+      if (!iso) return '—';
+      var d = new Date(iso);
+      if (isNaN(d)) return iso;
+      return new Intl.DateTimeFormat(locale(), { hour: '2-digit', minute: '2-digit', second: '2-digit' }).format(d);
+    },
+    /** Тысячи с пробелом: 1549967 → «1 549 967». */
+    int: function (v) { return v == null || isNaN(v) ? '—' : nf(0, 0).format(v); },
     date: function (iso) {
       if (!iso) return '—';
       var d = new Date(iso);
@@ -191,6 +217,20 @@
 
   ui.badge = function (text, tone, iconName, extra) {
     return h('span', Object.assign({ class: ['badge', tone && 'badge--' + tone] }, extra || {}), iconName ? icon(iconName) : null, text);
+  };
+
+  /** Горизонтальная полоска доли 0..1: ui.bar(0.62, {tone: 'brand'|'success'|'danger'|'warning'|'mid', mark: 0.8, label}) */
+  ui.bar = function (share, opts) {
+    opts = opts || {};
+    var v = share == null || isNaN(share) ? 0 : Math.max(0, Math.min(1, share));
+    return h('span', { class: 'hbar' + (opts.tone ? ' hbar--' + opts.tone : ''), role: 'img', 'aria-label': opts.label || null },
+      h('span', { class: 'hbar__fill', style: { width: (v * 100).toFixed(1) + '%' } }),
+      opts.mark != null ? h('span', { class: 'hbar__mark', title: opts.markTitle || null, style: { left: (Math.max(0, Math.min(1, opts.mark)) * 100).toFixed(1) + '%' } }) : null);
+  };
+
+  /** Подсказка-пояснение «?» с текстом во всплывающем title и для экранных читалок. */
+  ui.hint = function (text) {
+    return h('span', { class: 'hint', tabindex: '0', role: 'note', title: text, 'aria-label': text }, icon('question', 'icon--16'));
   };
 
   ui.spinner = function (label) { return h('span', { class: 'spinner', role: 'status', 'aria-label': label || t('state.loading') }); };

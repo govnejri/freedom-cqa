@@ -61,7 +61,7 @@
 
     bindEvents() {
       var self = this;
-      this.addEventListener('cqa-criterion-select', function (e) { self.selectCriterion(e.detail.cid, { scroll: false, url: true }); });
+      this.addEventListener('cqa-criterion-select', function (e) { self.selectCriterion(e.detail.cid, { scroll: !!e.detail.scroll, url: true }); });
       this.addEventListener('cqa-evidence', function (e) {
         self.selectCriterion(e.detail.cid, { scroll: false, url: false, reveal: false });
         self.goToMessage(e.detail.mid, { play: true });
@@ -115,18 +115,22 @@
       });
     }
 
-    /** Конфиг версии чек-листа (ступени шкал) и решения по апелляциям — для отображения. Ошибки не критичны. */
+    /** Верхние ступени шкал (scale_top из оценки; для старых данных — из версии чек-листа) и решения по апелляциям. */
     loadExtras() {
       var self = this, ev = this.ev;
       this.tops = {};
       this.appealsById = {};
       if (!ev) return Promise.resolve();
+      var needConfig = false;
+      ev.criteria.forEach(function (c) {
+        if (c.scale_top != null) self.tops[c.criterion_id] = c.scale_top;
+        else if (c.type === 'scale') needConfig = true;
+      });
       var ids = ev.criteria.filter(function (c) { return c.appeal_id; }).map(function (c) { return c.appeal_id; });
       return Promise.all([
-        CQA.api.checklistVersion(ev.checklist_version_id).then(function (v) {
-          self.config = v.config;
-          (v.config.criteria || []).forEach(function (c) { var tp = CQA.scoring.top(c); if (tp != null) self.tops[c.id] = tp; });
-        }).catch(function () { /* без конфига: ступень покажем числом */ }),
+        needConfig ? CQA.api.checklistVersion(ev.checklist_version_id).then(function (v) {
+          (v.config.criteria || []).forEach(function (c) { var tp = CQA.scoring.top(c); if (tp != null && self.tops[c.id] == null) self.tops[c.id] = tp; });
+        }).catch(function () { /* без конфига: ступень покажем числом */ }) : null,
         Promise.all(ids.map(function (id) { return CQA.api.appeal(id).then(function (a) { self.appealsById[id] = a; }).catch(function () {}); }))
       ]);
     }

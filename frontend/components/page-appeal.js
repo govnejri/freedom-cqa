@@ -4,6 +4,26 @@
   'use strict';
   var h = CQA.h, icon = CQA.icon, t = CQA.t, fmt = CQA.fmt, ui = CQA.ui, U = CQA.util;
 
+  /** Конфиг для предпросмотра итога из самой оценки (веса, типы, scale_top) — без запроса версии чек-листа.
+      null, если у шкал нет scale_top (старые данные). */
+  function configFromEval(ev) {
+    if (!ev || !ev.criteria) return null;
+    var ok = true;
+    var criteria = ev.criteria.map(function (c) {
+      if (c.type === 'scale' && c.scale_top == null) ok = false;
+      var allowed = c.allowed_verdicts || [];
+      return {
+        id: c.criterion_id, title: c.title, section: c.section, type: c.type, weight: c.weight, enabled: true,
+        na_allowed: allowed.indexOf('N/A') >= 0,
+        scale: c.type === 'scale' ? allowed.filter(function (v) { return v !== 'N/A'; }).map(function (v) { return { value: Number(v), text: v }; }) : null
+      };
+    });
+    if (!ok) return null;
+    criteria.forEach(function (c, i) { if (c.type === 'scale' && !(c.scale && c.scale.length)) c.scale = [{ value: ev.criteria[i].scale_top, text: '' }]; });
+    var sections = (ev.sections || []).map(function (s) { return { id: s.section_id, title: s.title }; });
+    return { criteria: criteria, sections: sections };
+  }
+
   class CqaPageAppeal extends HTMLElement {
     connectedCallback() {
       if (this._built) return;
@@ -30,6 +50,9 @@
         self.appeal = a;
         return CQA.api.evaluationById(a.evaluation_id).then(function (ev) {
           self.ev = ev;
+          self.config = configFromEval(ev);
+          if (self.config) return null;
+          // старые данные без scale_top — берём ступени из версии чек-листа
           return CQA.api.checklistVersion(ev.checklist_version_id).then(function (v) { self.config = v.config; }, function () { self.config = null; });
         }, function () { self.ev = null; self.config = null; });
       }).then(function () { self.render(); }, function (err) {
@@ -44,12 +67,18 @@
       return this.config ? (this.config.criteria || []).filter(function (c) { return c.id === cid; })[0] : null;
     }
 
-    top() { var c = this.critConfig(); return c ? CQA.scoring.top(c) : null; }
+    top() {
+      var o = this.appeal.original || {};
+      if (o.scale_top != null) return o.scale_top;
+      var c = this.critConfig();
+      return c ? CQA.scoring.top(c) : null;
+    }
 
     allowed() {
+      var o = this.appeal.original || {};
+      if (o.allowed_verdicts && o.allowed_verdicts.length) return o.allowed_verdicts.slice();
       var c = this.critConfig();
       if (c) return CQA.scoring.allowedVerdicts(c);
-      var o = this.appeal.original || {};
       var base = ['Да', 'Нет'];
       if (o.verdict === 'N/A') base.push('N/A');
       return o.type === 'scale' ? [o.verdict].filter(Boolean) : base;
@@ -94,16 +123,9 @@
 
       // ---- правая колонка
       this.right = h('div', { class: 'stack stack--l appeal-side' });
-      if (a.ai_opinion) {
-        var ai = a.ai_opinion;
-        this.right.appendChild(h('section', { class: 'card ai-card', 'aria-labelledby': 'ap-ai' },
-          h('div', { class: 'card__header' },
-            h('h2', { class: 'card__title row', id: 'ap-ai' }, icon('sparkle'), t('appeal.aiOpinion')),
-            ai.model ? h('span', { class: 'muted t-caption1' }, ai.model) : null),
-          ai.verdict ? h('div', { class: 'row', style: { marginBottom: '6px' } }, h('span', { class: 'muted' }, t('appeal.aiVerdict')), CQA.verdict(ai.verdict, o.type, top, { size: 'l' })) : null,
-          ai.explanation ? h('p', { class: 'subtle' }, ai.explanation) : null,
-          h('div', { class: 'muted t-caption1', style: { marginTop: '8px' } }, t('appeal.aiNote'))));
-      }
+      this.aiBox = h('div');
+      this.right.appendChild(this.aiBox);
+      this.renderAi();
       this.decisionBox = h('div');
       this.right.appendChild(this.decisionBox);
       if (a.status === 'decided' && a.decision) this.renderResult(); else this.renderForm();
@@ -119,6 +141,73 @@
               t('appeal.headerSub', { c: a.criterion_id + ' ' + a.criterion_title, d: fmt.date(a.created_at) }), ' · ',
               h('a', { href: convHref }, fmt.externalId(a.uid))))),
         h('div', { class: 'appeal-layout' }, left, this.right));
+    }
+
+    // ------------------------------------------------------------ второе мнение ИИ
+    renderAi() {
+      var self = this, a = this.appeal, o = a.original || {}, ai = a.ai_opinion;
+      var top = this.top();
+      if (!ai && a.status !== 'open') { CQA.dom.clear(this.aiBox); return; }
+      var head = h('div', { class: 'card__header' },
+        h('h2', { class: 'card__title row', id: 'ap-ai' }, icon('sparkle'), t('appeal.aiOpinion')),
+        ai && ai.model ? h('span', { class: 'muted t-caption1' }, ai.model) : null);
+      var card = h('section', { class: 'card ai-card', 'aria-labelledby': 'ap-ai', 'aria-busy': 'false' }, head);
+      var askBtn = function (label, primary) {
+        var b = h('button', { class: 'btn' + (primary ? ' btn--primary' : ' btn--small btn--subtle'), type: 'button' }, icon('sparkle'), label);
+        b.addEventListener('click', function () { self.askAi(b, card); });
+        return b;
+      };
+      if (!ai) {
+        card.appendChild(h('p', { class: 'subtle' }, t('appeal.aiAskText')));
+        card.appendChild(h('div', { class: 'row', style: { marginTop: '12px' } }, askBtn(t('appeal.aiAsk'), true)));
+        this.aiStatus = h('div', { 'aria-live': 'polite', style: { marginTop: '8px' } });
+        card.appendChild(this.aiStatus);
+        CQA.dom.replace(this.aiBox, card);
+        return;
+      }
+      var sup = { 'да': ['success', 'checkCircle', 'appeal.aiSupportYes'], 'частично': ['mid', 'info', 'appeal.aiSupportPartly'], 'нет': ['neutral', 'close', 'appeal.aiSupportNo'] }[ai.appeal_supported] || null;
+      card.appendChild(h('div', { class: 'stack' },
+        sup ? h('div', { class: 'ai-support ai-support--' + sup[0] }, icon(sup[1]), h('span', null, t(sup[2]))) : null,
+        h('dl', { class: 'kv ai-kv' },
+          h('dt', null, t('appeal.aiVerdict')), h('dd', null, CQA.verdict(ai.verdict, o.type, top, { size: 'l' }),
+            ai.category ? h('span', { class: 'muted t-caption1' }, ' ' + ai.category) : null),
+          h('dt', null, t('appeal.aiSystemVerdict')), h('dd', null, CQA.verdict(ai.compared_to || o.verdict, o.type, top))),
+        ai.explanation ? h('p', { class: 'subtle' }, ai.explanation) : null,
+        ai.evidence && ai.evidence.length ? h('div', { class: 'crit__section' },
+          h('div', { class: 'crit__label' }, t('crit.evidence')),
+          h('div', { class: 'evchips' }, ai.evidence.map(function (e) {
+            return h('button', { class: 'evchip', type: 'button', title: t('crit.goToMessage', { mid: e.id }), onClick: function () { self.goTo(e.id); } },
+              h('span', { class: 'evchip__id' }, e.id), h('span', { class: 'evchip__q' }, '«' + e.quote + '»'));
+          }))) : null,
+        ai.reasoning ? h('details', { class: 'disclosure' },
+          h('summary', null, icon('chevronRight'), t('crit.reasoning')),
+          h('div', { class: 'disclosure__body t-caption1 subtle pre-wrap' }, ai.reasoning)) : null,
+        ai.uncertain ? ui.badge(t('appeal.aiUncertain'), 'warning', 'eye') : null,
+        h('div', { class: 'muted t-caption1' }, t('appeal.aiBlindNote')),
+        h('div', { class: 'row t-caption1' },
+          h('a', { href: '#/log/' + a.evaluation_id }, icon('code', 'icon--16'), ' ', t('appeal.aiLog')),
+          ai.cost_usd != null ? h('span', { class: 'muted' }, fmt.money(ai.cost_usd)) : null,
+          ai.created_at ? h('span', { class: 'muted' }, fmt.date(ai.created_at)) : null,
+          h('span', { class: 'spacer' }),
+          a.status === 'open' ? askBtn(t('appeal.aiAskAgain'), false) : null)));
+      CQA.dom.replace(this.aiBox, card);
+    }
+
+    askAi(btn, card) {
+      var self = this;
+      btn.disabled = true;
+      CQA.dom.replace(btn, ui.spinner(), t('appeal.aiAsking'));
+      card.setAttribute('aria-busy', 'true');
+      CQA.api.secondOpinion(this.appeal.id).then(function (a) {
+        self.appeal = a;
+        ui.toast(t('appeal.aiReady'), { tone: 'success' });
+        self.renderAi();
+      }, function (err) {
+        btn.disabled = false;
+        card.setAttribute('aria-busy', 'false');
+        CQA.dom.replace(btn, icon('sparkle'), t('appeal.aiAsk'));
+        ui.toast(t('appeal.aiFailed'), { tone: 'error', detail: err.message });
+      });
     }
 
     goTo(mid) {
@@ -169,7 +258,9 @@
         h('div', { class: 'field' },
           h('label', { class: 'field__label', for: 'ap-reason' }, t('decision.reason'), h('span', { class: 'req', 'aria-hidden': 'true' }, '*')),
           this.reason, this.reasonErr),
-        h('label', { class: 'check check--small' }, this.precedent, t('decision.precedent')),
+        h('div', { class: 'field' },
+          h('label', { class: 'check check--small' }, this.precedent, t('decision.precedent')),
+          h('div', { class: 'field__hint' }, t('decision.precedentHint'))),
         this.preview,
         this.formErr,
         h('div', { class: 'row' }, this.submitBtn));
@@ -238,7 +329,7 @@
         h('dl', { class: 'kv decision-kv' },
           h('dt', null, t('decision.original')),
           h('dd', null, h('span', { class: 'row' }, CQA.verdict(o.verdict, o.type, top),
-            o.score && o.type !== 'flag' && o.verdict !== 'N/A' ? h('span', { class: 'muted num t-caption1' }, t('decision.points', { p: fmt.score(o.score.points), m: fmt.score(o.score.max_points) })) : null)),
+            o.score && o.type !== 'flag' && o.verdict !== 'N/A' && (o.final_verdict == null || o.final_verdict === o.verdict) ? h('span', { class: 'muted num t-caption1' }, t('decision.points', { p: fmt.score(o.score.points), m: fmt.score(o.score.max_points) })) : null)),
           h('dt', null, t('decision.label')),
           h('dd', null, d.action === 'change'
             ? h('span', { class: 'row' }, t('decision.changeTo'), CQA.verdict(d.new_verdict, o.type, top))

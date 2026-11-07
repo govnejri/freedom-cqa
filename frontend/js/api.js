@@ -226,6 +226,34 @@
     appeal: function (id) { return request('GET', '/appeals/' + id); },
     decide: function (id, dto) { return request('POST', '/appeals/' + id + '/decision', { body: dto }); },
 
+    secondOpinion: function (id) { return request('POST', '/appeals/' + id + '/second-opinion'); },
+
+    // ---- P1: инсайты руководителя
+    insightsSummary: function (group) { return request('GET', '/insights/summary', { query: { group: group } }); },
+    risks: function (group) { return request('GET', '/insights/risks', { query: { group: group } }); },
+    toCompliance: function (crid, note) { return request('POST', '/insights/risks/' + crid + '/compliance', { body: { note: note || null } }); },
+    unanswered: function (group, topic) { return request('GET', '/insights/unanswered', { query: { group: group, topic: topic } }); },
+    reasons: function (group) { return request('GET', '/insights/reasons', { query: { group: group } }); },
+    runSignals: function (dto) { return request('POST', '/insights/signals', { body: dto || {} }); },
+
+    // ---- P1: качество, автотесты
+    quality: function (params) { return request('GET', '/quality', { query: params }); },
+    qualityRuns: function () { return request('GET', '/quality/runs'); },
+    autotests: function (profile) { return request('GET', '/quality/autotests', { query: { profile: profile } }); },
+
+    // ---- P1: пробный прогон и «было/стало»
+    dryRun: function (vid, body) { return request('POST', '/checklist-versions/' + vid + '/dry-run', { body: body || { sample: 10 } }); },
+    runDiff: function (id) { return request('GET', '/runs/' + id + '/diff'); },
+
+    // ---- P1: журнал оценки
+    evaluations: function (uid) { return request('GET', '/conversations/' + enc(uid) + '/evaluations'); },
+    evaluationCalls: function (id) { return request('GET', '/evaluations/' + id + '/calls'); },
+    llmCall: function (id) { return request('GET', '/llm-calls/' + id); },
+
+    // ---- P1: настройки ролей
+    settings: function () { return request('GET', '/settings'); },
+    saveSettings: function (roles) { return request('PUT', '/settings', { body: { roles: roles } }); },
+
     /** Ссылка на экспорт (для прямого открытия, если скачивание из iframe заблокировано). */
     exportUrl: function (params) { return url('/export', params); },
     exportBlob: function (params) {

@@ -5,9 +5,12 @@
 
   var NAV = [
     { key: 'dashboard', href: '#/', icon: 'home', label: 'nav.dashboard' },
+    { key: 'risks', href: '#/risks', icon: 'shield', label: 'nav.risks' },
     { key: 'conversations', href: '#/conversations', icon: 'chat', label: 'nav.conversations' },
     { key: 'appeals', href: '#/appeals', icon: 'scale', label: 'nav.appeals' },
-    { key: 'checklist', href: null, icon: 'checklist', label: 'nav.checklist' }
+    { key: 'checklist', href: null, icon: 'checklist', label: 'nav.checklist' },
+    { key: 'quality', href: '#/quality', icon: 'chart', label: 'nav.quality' },
+    { key: 'settings', href: '#/settings', icon: 'settings', label: 'nav.settings' }
   ];
 
   class CqaApp extends HTMLElement {

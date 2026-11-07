@@ -67,7 +67,9 @@
 
       CQA.api.datasets().then(function (list) {
         (list || []).forEach(function (ds) { self.groupSel.appendChild(h('option', { value: ds.group_id }, ds.group_id + ' · ' + t('dash.records', { n: ds.total_records }))); });
-        if (list && list.length === 1) self.groupSel.value = list[0].group_id;
+        var g = CQA.defaultGroup ? CQA.defaultGroup(list) : null;   // текущий набор, не автотесты
+        if (g) self.groupSel.value = g;
+        else if (list && list.length === 1) self.groupSel.value = list[0].group_id;
       }).catch(function () {});
     }
 

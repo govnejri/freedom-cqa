@@ -100,7 +100,9 @@
             h('dt', null, t('run.created')), h('dd', null, fmt.date(run.created_at)),
             h('dt', null, t('run.started')), h('dd', null, fmt.date(run.started_at)),
             h('dt', null, t('run.finished')), h('dd', null, fmt.date(run.finished_at)))),
-        !active ? h('div', { class: 'row' },
+        run.kind === 'dry_run' ? h('div', { class: 'row' },
+          h('a', { class: 'btn btn--primary', href: '#/runs/' + run.id + '/diff' }, icon('compare'), t('rd.open'))) : null,
+        !active && run.kind !== 'dry_run' ? h('div', { class: 'row' },
           h('a', { class: 'btn btn--primary', href: '#/conversations' }, icon('chat'), t('run.openList')),
           run.units_failed ? h('a', { class: 'btn', href: '#/conversations?review=1' }, t('run.openReview')) : null) : null));
       if (focused) {
