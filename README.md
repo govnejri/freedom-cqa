@@ -3,6 +3,9 @@
 Прототип автоматической оценки чатов и звонков операторов по настраиваемому чек-листу:
 оценка с репликами-доказательствами, апелляция и пересмотр, редактор чек-листа.
 
+- **План проекта: [docs/plan.md](docs/plan.md)**
+- Ядро оценки: [docs/core-eval.md](docs/core-eval.md)
+- Эталон и сравнение разметок: [eval/](eval/)
 - Задание: [docs/task.txt](docs/task.txt)
 - Чек-лист: [docs/checklist.txt](docs/checklist.txt), [PDF](docs/CQA_Chat_Quality_Checklist%201.pdf)
 - Концепция: [CQA Freedom Broker — концепция проекта.md](CQA%20Freedom%20Broker%20—%20концепция%20проекта.md)
