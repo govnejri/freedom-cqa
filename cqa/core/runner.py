@@ -165,6 +165,8 @@ async def process_run(con: sqlite3.Connection, run_id: int, conv_concurrency: in
             ).fetchall()
             if rows:
                 await judge_row(conv, rows[0])          # прогрев общего префикса в кэше провайдера
+                if len(rows) > 1 and not _last_cache_hit(con, rows[0]["id"]):
+                    await asyncio.sleep(2.0)            # кэш Gemini появляется не сразу (замер: параллельно cached=0)
                 await asyncio.gather(*(judge_row(conv, r) for r in rows[1:]))
             finalize_evaluation(con, ev["id"], cfg, channel=conv.channel)
 
@@ -173,6 +175,11 @@ async def process_run(con: sqlite3.Connection, run_id: int, conv_concurrency: in
     status = "cancelled" if _cancelled(con, run_id) else "done"
     con.execute("UPDATE runs SET status=?, finished_at=? WHERE id=?", (status, now_iso(), run_id))
     return dict(con.execute("SELECT * FROM runs WHERE id=?", (run_id,)).fetchone())
+
+
+def _last_cache_hit(con, crid: int) -> bool:
+    r = con.execute("SELECT cache_hit FROM llm_calls WHERE criterion_result_id=? ORDER BY id DESC LIMIT 1", (crid,)).fetchone()
+    return bool(r and r["cache_hit"])
 
 
 def _cancelled(con, run_id: int) -> bool:

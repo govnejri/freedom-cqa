@@ -1,0 +1,42 @@
+<criterion>
+Критерий {{ c.id }} «{{ c.title }}».
+Тип: {{ type_text }}. Вес: {{ weight }}.
+Определение: {{ c.definition }}
+{% if c.na_allowed %}
+N/A — если: {{ c.na_condition or "выполнено условие неприменимости из определения" }}
+{% else %}
+N/A для этого критерия не допускается.
+{% endif %}
+{% if scale %}
+Ступени шкалы (сверху вниз):
+{% for s in scale %}
+- {{ s.value }} — {{ s.text }}
+{% endfor %}
+{% endif %}
+{% if c.check_steps %}
+Шаги проверки:
+{% for s in c.check_steps %}
+{{ loop.index }}. {{ s }}
+{% endfor %}
+{% endif %}
+{% if c.interpretations %}
+Трактовки:
+{% for s in c.interpretations %}
+- {{ s }}
+{% endfor %}
+{% endif %}
+{% if c.examples %}
+Примеры:
+{% for e in c.examples %}
+- «{{ e.verdict }}»: {{ e.fragment }} — {{ e.why }}
+{% endfor %}
+{% endif %}
+</criterion>
+
+Допустимые вердикты: {{ verdicts }}.
+Нарушение по этому критерию: {{ violation }}.
+{% if c.type == "flag" %}
+Категория (поле category) при «Да» — одна из: {{ categories }}. При «Нет» — пустая строка.
+{% endif %}
+Доказательства — реплики ролей: {{ roles }}.
+Оцени только этот критерий.
