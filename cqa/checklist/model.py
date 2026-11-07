@@ -54,8 +54,34 @@ class Criterion(BaseModel):
             vals.append("N/A")
         return vals
 
+    @model_validator(mode="before")
+    @classmethod
+    def _normalize(cls, data):
+        """Одинаковый критерий из YAML и из редактора даёт один и тот же хэш: пробелы по краям срезаются,
+        пустые строки в списках выбрасываются, пустое условие N/A = None. Иначе пробный прогон считает
+        «изменёнными» критерии, которые никто не трогал, и переоценивает их зря."""
+        if not isinstance(data, dict):
+            return data
+        d = dict(data)
+        for k, v in list(d.items()):
+            if isinstance(v, str):
+                d[k] = v.strip()
+            elif isinstance(v, list) and all(isinstance(x, str) for x in v):
+                d[k] = [x.strip() for x in v if x and x.strip()]
+        if d.get("na_condition") == "":
+            d["na_condition"] = None
+        return d
+
     @model_validator(mode="after")
     def _check(self) -> "Criterion":
+        if not self.title:
+            raise ValueError(f"критерий {self.id}: нужно название")
+        if not self.definition:
+            raise ValueError(f"критерий {self.id}: нужно определение — что значит «Да» или как ставить балл")
+        if self.weight < 0:
+            raise ValueError(f"критерий {self.id}: вес не может быть отрицательным")
+        if self.scale and any(not (st.text or "").strip() for st in self.scale):
+            raise ValueError(f"критерий {self.id}: у каждой ступени шкалы нужно описание")
         if self.type == "scale":
             if not self.scale:
                 raise ValueError(f"критерий {self.id}: для шкалы нужны ступени")

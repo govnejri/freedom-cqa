@@ -299,7 +299,35 @@ def finalize_evaluation(con, eval_id: int, cfg: ChecklistConfig, channel: str | 
             con.execute("UPDATE conversations SET current_evaluation_id=? WHERE uid=?", (eval_id, uid))
             if prev_eval and prev_eval != eval_id:
                 _carry_over_decisions(con, prev_eval, eval_id)
+                _carry_over_open_appeals(con, prev_eval, eval_id)
+                _carry_over_signals(con, prev_eval, eval_id)
     recompute_final(con, eval_id, cfg, channel=channel)
+
+
+def _carry_over_open_appeals(con, prev_eval: int, new_eval: int) -> int:
+    """Открытая апелляция переезжает на новую оценку, если вердикт и критерий не изменились.
+    Иначе решение по ней пересчитывало бы уже не текущую оценку (карточка и список его не видели)."""
+    n = 0
+    for a in con.execute(
+        "SELECT a.id, a.criterion_id, cr.verdict, cr.criterion_hash FROM appeals a"
+        " JOIN criterion_results cr ON cr.id=a.criterion_result_id WHERE a.evaluation_id=? AND a.status='open'",
+        (prev_eval,)).fetchall():
+        new_cr = con.execute("SELECT id, verdict, criterion_hash FROM criterion_results WHERE evaluation_id=? AND criterion_id=?",
+                             (new_eval, a["criterion_id"])).fetchone()
+        if new_cr and new_cr["verdict"] == a["verdict"] and new_cr["criterion_hash"] == a["criterion_hash"]:
+            con.execute("UPDATE appeals SET evaluation_id=?, criterion_result_id=? WHERE id=?",
+                        (new_eval, new_cr["id"], a["id"]))
+            n += 1
+    return n
+
+
+def _carry_over_signals(con, prev_eval: int, new_eval: int) -> None:
+    """Сигналы (причина обращения, вопросы без ответа) зависят только от переписки, не от чек-листа:
+    при переоценке переносим их, иначе сводка «теряет» вопросы до платного пересчёта."""
+    con.execute(
+        "INSERT OR IGNORE INTO signals(evaluation_id, contact_reason, resolved, unanswered_json, churn_risk,"
+        " missed_opportunity, llm_call_id) SELECT ?, contact_reason, resolved, unanswered_json, churn_risk,"
+        " missed_opportunity, llm_call_id FROM signals WHERE evaluation_id=?", (new_eval, prev_eval))
 
 
 def _carry_over_decisions(con, prev_eval: int, new_eval: int) -> int:

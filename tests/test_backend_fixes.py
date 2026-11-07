@@ -71,3 +71,47 @@ def test_dry_run_sample_prefers_violations(tmp_db):
         e = tmp_db.execute("SELECT current_evaluation_id FROM conversations WHERE uid=?", (u,)).fetchone()[0]
         tmp_db.execute("UPDATE criterion_results SET verdict='Да' WHERE evaluation_id=? AND criterion_id='07'", (e,))
     assert sample_uids(tmp_db, "T", 2, ["07"], cfg)[0] == target
+
+
+def test_restart_does_not_revert_ui_published_version(tmp_db, tmp_path):
+    """Перезапуск (sync_yaml) не откатывает версию, опубликованную в интерфейсе, если YAML не менялся."""
+    from cqa.checklist.store import create_version, get_active, publish, sync_yaml
+
+    path = get_settings().checklist_path
+    vid, _ = sync_yaml(tmp_db, path)
+    cfg, meta = get_active(tmp_db)
+    cfg.criteria[6].definition = cfg.criteria[6].definition + " Уточнено в интерфейсе."
+    ui_vid = create_version(tmp_db, cfg.id, cfg, parent_id=meta["id"], status="published")
+    publish(tmp_db, ui_vid)
+    again, created = sync_yaml(tmp_db, path)          # «перезапуск сервера»
+    assert not created and again == ui_vid
+
+
+def test_criterion_validation_rejects_bad_values():
+    from cqa.checklist.model import Criterion
+
+    base = dict(id="09", title="Новый", section="conduct", type="yes_no", weight=5, definition="Да — если …")
+    Criterion(**base)
+    for bad in ({"weight": -10}, {"title": "  "}, {"definition": ""}):
+        with pytest.raises(ValidationError):
+            Criterion(**{**base, **bad})
+    # пробелы и пустое условие N/A нормализуются — хэш совпадает с «чистым» критерием
+    from cqa.checklist.io import criterion_hash
+    assert criterion_hash(Criterion(**{**base, "title": " Новый ", "na_condition": ""})) == criterion_hash(Criterion(**base))
+
+
+def test_rerun_keeps_open_appeal_and_signals(tmp_db):
+    vid, uids = _setup(tmp_db)
+    uid = uids[0]
+    run_sync(tmp_db, create_run(tmp_db, uids=[uid], version_id=vid, profile_name="fake"))
+    ev1 = tmp_db.execute("SELECT current_evaluation_id FROM conversations WHERE uid=?", (uid,)).fetchone()[0]
+    appeal = create_appeal(tmp_db, AppealCreateDTO(evaluation_id=ev1, criterion_id="01", comment="не согласен"))
+    tmp_db.execute("INSERT INTO signals(evaluation_id, contact_reason, resolved, unanswered_json) VALUES (?,?,?,?)",
+                   (ev1, "вывод средств", 0, '[{"text":"когда выводить?","mid":"m5","status":"открыт"}]'))
+    run_sync(tmp_db, create_run(tmp_db, uids=[uid], version_id=vid, profile_name="fake", force=True))
+    ev2 = tmp_db.execute("SELECT current_evaluation_id FROM conversations WHERE uid=?", (uid,)).fetchone()[0]
+    assert ev2 != ev1
+    a = tmp_db.execute("SELECT evaluation_id, status FROM appeals WHERE id=?", (appeal.id,)).fetchone()
+    assert a["evaluation_id"] == ev2 and a["status"] == "open"
+    s = tmp_db.execute("SELECT contact_reason FROM signals WHERE evaluation_id=?", (ev2,)).fetchone()
+    assert s and s["contact_reason"] == "вывод средств"

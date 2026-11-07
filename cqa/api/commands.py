@@ -9,7 +9,7 @@ import typer
 def register(app: typer.Typer) -> None:
     @app.command("serve")
     def serve(
-        host: str = typer.Option("0.0.0.0", help="Адрес"),
+        host: str = typer.Option("127.0.0.1", help="Адрес (0.0.0.0 — открыть в сети, например для демо с другого устройства)"),
         port: int = typer.Option(8000, help="Порт"),
         dev: bool = typer.Option(False, "--dev", help="Отдавать frontend/ как есть (без сборки)"),
         fake: bool = typer.Option(False, "--fake", help="Все роли — профиль fake: демо без сети"),

@@ -211,10 +211,19 @@ def sync_yaml(con: sqlite3.Connection, path: str | Path, comment: str | None = N
     """
     seed(con, path)
     cfg = load_yaml(path)
+    h = config_hash(cfg)
     _active_cfg, meta = get_active(con, cfg.id)
-    if meta["config_hash"] == config_hash(cfg):
+    key = f"yaml_hash:{cfg.id}"
+    row = con.execute("SELECT value_json FROM settings WHERE key=?", (key,)).fetchone()
+    stored = json.loads(row[0]) if row else None
+    # Импортируем, только если изменился сам YAML. Версию, опубликованную в интерфейсе, перезапуск
+    # сервера не трогает (раньше сравнение шло с активной версией и откатывало правки из UI).
+    if stored == h or (stored is None and meta["config_hash"] == h):
+        if stored is None:
+            con.execute("INSERT OR REPLACE INTO settings(key, value_json) VALUES (?, ?)", (key, json.dumps(h)))
         return int(meta["id"]), False
     vid = create_version(con, cfg.id, cfg, parent_id=int(meta["id"]),
                          comment=comment or f"импорт {Path(path).name}", status="published")
     publish(con, vid)
+    con.execute("INSERT OR REPLACE INTO settings(key, value_json) VALUES (?, ?)", (key, json.dumps(h)))
     return vid, True

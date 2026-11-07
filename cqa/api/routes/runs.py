@@ -80,8 +80,12 @@ async def create_run(dto: RunCreateDTO, request: Request, con: sqlite3.Connectio
         missing = [u for u in uids if u not in known]
         if missing:
             raise invalid("uids", f"нет диалогов: {', '.join(missing[:10])}")
-    else:
+    elif dto.group:
         uids = list_uids(con, dto.group)
+    else:   # «все наборы» = рабочие диалоги: без мутантов автотестов и сессий тренажёра
+        uids = [r[0] for r in con.execute(
+            "SELECT c.uid FROM conversations c JOIN datasets d ON d.group_id=c.group_id"
+            " WHERE c.parent_uid IS NULL AND d.source NOT IN ('autotest', 'trainer') ORDER BY c.uid")]
     if not uids:
         raise invalid("group" if dto.group else "uids", "нет диалогов для оценки")
 
