@@ -5,6 +5,7 @@
 """
 from __future__ import annotations
 
+import json
 import sqlite3
 from contextlib import contextmanager
 from pathlib import Path
@@ -78,6 +79,7 @@ def save_conversation(con: sqlite3.Connection, conv: Conversation, audio_url: st
              NORMALIZER_VERSION, facts.model_dump_json(), conv.operator_name,
              "pending" if audio_url else "none", ts),
         )
+        _apply_operator_override(con, conv.uid)
         con.execute("DELETE FROM messages WHERE uid=?", (conv.uid,))
         con.execute("DELETE FROM messages_fts WHERE uid=?", (conv.uid,))
         con.executemany(
@@ -180,3 +182,16 @@ def _set_audio_url(con: sqlite3.Connection, uid: str, audio_url: str | None) -> 
         (uid, audio_url, now_iso()),
     )
 
+
+
+def _apply_operator_override(con: sqlite3.Connection, uid: str) -> None:
+    """Ручное назначение оператора (settings[operator_overrides], cqa/features/operators.py) переживает перезагрузку набора."""
+    row = con.execute("SELECT value_json FROM settings WHERE key='operator_overrides'").fetchone()
+    if not row:
+        return
+    try:
+        ov = json.loads(row[0]).get(uid)
+    except (ValueError, AttributeError):
+        return
+    if ov and ov.get("name"):
+        con.execute("UPDATE conversations SET operator_name=? WHERE uid=?", (ov["name"], uid))
