@@ -1,5 +1,6 @@
-/* <cqa-verdict verdict="Да" type="yes_no" top="20" size="l"> — бейдж вердикта.
-   Да — зелёный, Нет — красный, N/A — серый, шкала — по доле от верхней ступени. У флага «Да» = нарушение (красный). */
+/* <cqa-verdict verdict="Да" type="yes_no" top="20" size="l"> — пилюля вердикта.
+   Да — зелёный, Нет и ступень ниже верхней — янтарный (потеря баллов), N/A — серый текст.
+   У флага «Да» = грубое нарушение — красный (единственное место красного). */
 (function (CQA) {
   'use strict';
   var h = CQA.h, U = CQA.util;
@@ -13,6 +14,7 @@
       var type = this.getAttribute('type') || 'yes_no';
       var top = this.getAttribute('top');
       var tone = U.verdictTone(v, type, top);
+      if (type === 'flag' && v === 'Да') tone = 'gross';   // грубое нарушение — единственный красный
       var label = U.verdictLabel(v, type, top);
       var title = type === 'flag' && v === 'Да' ? CQA.t('verdict.flagYesTitle') : type === 'flag' && v === 'Нет' ? CQA.t('verdict.flagNoTitle') : null;
       this.textContent = '';

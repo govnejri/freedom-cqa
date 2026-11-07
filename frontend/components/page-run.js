@@ -13,9 +13,14 @@
       document.title = t('run.title', { id: this.id_ }) + ' · CQA';
       this.box = h('div', null, ui.skeleton('card', 4));
       this.textContent = '';
+      var back = this.query && this.query.back;
+      this.backUid = back || null;
+      this.after = h('div');
       this.appendChild(h('div', { class: 'page run-page' },
-        h('a', { class: 'back-link', href: '#/' }, icon('arrowLeft', 'icon--16'), t('nav.dashboard')),
-        h('div', { class: 'page-header' }, h('h1', null, t('run.title', { id: this.id_ }))),
+        back ? h('a', { class: 'back-link', href: CQA.convHref(back) }, icon('arrowLeft', 'icon--16'), CQA.fmt.externalId(back))
+          : h('a', { class: 'back-link', href: '#/conversations' }, icon('arrowLeft', 'icon--16'), t('nav.queue')),
+        ui.pageHead({ title: t('run.title', { id: this.id_ }), what: t('run.what') }),
+        this.after,
         this.box));
       this.first = true;
       this.poll();
@@ -31,6 +36,11 @@
         self.errors = 0;
         self.render(run);
         if (ACTIVE[run.status]) self.timer = setTimeout(function () { self.poll(); }, 1000);
+        else {
+          self.renderAfter(run);
+          // после отмены досчитываются оценки «в полёте» — один повторный запрос, чтобы показать точные числа
+          if (run.status === 'cancelled' && !self._recheck) { self._recheck = true; self.timer = setTimeout(function () { self.poll(); }, 2500); }
+        }
       }, function (err) {
         if (self.stopped) return;
         self.errors = (self.errors || 0) + 1;
@@ -58,7 +68,7 @@
       retry.addEventListener('click', function () { self.act(retry, CQA.api.retryFailed(self.id_), t('run.retried')); });
       var cancel = h('button', { class: 'btn btn--danger', type: 'button', 'data-action': 'cancel', disabled: !active }, icon('stop'), t('run.cancel'));
       cancel.addEventListener('click', function () {
-        ui.confirm(t('run.cancelConfirmTitle'), t('run.cancelConfirm'), t('run.cancel'), true).then(function (ok) {
+        ui.confirm(t('run.cancelConfirmTitle'), t('run.cancelConfirm'), t('run.cancel'), true, t('run.keepRunning')).then(function (ok) {
           if (ok) self.act(cancel, CQA.api.cancelRun(self.id_), t('run.cancelled'));
         });
       });
@@ -102,13 +112,42 @@
             h('dt', null, t('run.finished')), h('dd', null, fmt.date(run.finished_at)))),
         run.kind === 'dry_run' ? h('div', { class: 'row' },
           h('a', { class: 'btn btn--primary', href: '#/runs/' + run.id + '/diff' }, icon('compare'), t('rd.open'))) : null,
-        !active && run.kind !== 'dry_run' ? h('div', { class: 'row' },
-          h('a', { class: 'btn btn--primary', href: '#/conversations' }, icon('chat'), t('run.openList')),
+        !active && run.kind !== 'dry_run' && !this.backUid ? h('div', { class: 'row' },
+          h('a', { class: 'btn', href: '#/conversations' }, icon('inbox'), t('run.openList')),
           run.units_failed ? h('a', { class: 'btn', href: '#/conversations?review=1' }, t('run.openReview')) : null) : null));
       if (focused) {
         var again = this.box.querySelector('[data-action="' + focused + '"]');
         if (again && !again.disabled) again.focus();
       }
+    }
+
+    /** Готово → «что дальше»: вернуться к диалогу или итог «средний балл было → стало, изменились N диалогов». */
+    renderAfter(run) {
+      var self = this;
+      if (this._afterDone || run.kind === 'dry_run') return;
+      this._afterDone = true;
+      if (this.backUid) {
+        CQA.dom.replace(this.after, ui.nextStep({ icon: 'check', title: t('run.doneOne'), text: t('run.doneOneText'), closable: false,
+          actions: [{ label: t('run.backToDialog'), href: CQA.convHref(this.backUid), primary: true, icon: 'arrowLeft' }] }));
+        return;
+      }
+      var snap = CQA.store.get('cqa.runBefore.' + run.id, null, true);
+      if (!snap || run.status !== 'done') return;
+      CQA.api.conversations(snap.group ? { group: snap.group } : {}).then(function (list) {
+        var b = [], a = [], changed = 0;
+        (list || []).forEach(function (s) {
+          if (!(s.uid in snap.totals)) return;
+          var was = snap.totals[s.uid], now = s.final_total != null ? s.final_total : s.total;
+          if (was != null) b.push(was);
+          if (now != null) a.push(now);
+          if (was != null && now != null && Math.abs(was - now) >= 0.005) changed++;
+        });
+        var avg = function (x) { return x.length ? x.reduce(function (p, v) { return p + v; }, 0) / x.length : null; };
+        CQA.dom.replace(self.after, ui.nextStep({ icon: 'check', closable: false,
+          title: t('run.doneBatch', { a: fmt.score(avg(b)), b: fmt.score(avg(a)) }),
+          text: t('run.doneBatchText', { n: changed }),
+          actions: [{ label: t('run.openList'), href: '#/conversations', primary: true, icon: 'inbox' }, { label: t('nav.dashboard'), href: '#/', icon: 'home' }] }));
+      });
     }
 
     act(btn, promise, okMsg) {

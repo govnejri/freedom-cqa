@@ -64,10 +64,10 @@
       var base = '#/checklists/' + encodeURIComponent(this.cid);
       var isPrec = p.tab === 'precedents';
       CQA.dom.replace(this.root,
-        h('div', { class: 'page-header' },
-          h('div', null, h('h1', null, t('nav.checklist')), h('div', { class: 'page-header__sub' }, title + ' · ', h('span', { class: 'mono' }, this.cid))),
-          cmpBase && !isPrec ? h('a', { class: 'btn', href: base + '/diff/' + cmpBase.id + '/' + newest.id },
-            icon('compare'), t('cl.compareVersions')) : null),
+        h('div', { class: 'page-head' },
+          h('div', null, h('h1', null, t('nav.checklist')), h('p', { class: 'page-head__what' }, isPrec ? t('cl.whatPrec') : t('cl.what'))),
+          cmpBase && !isPrec ? h('div', { class: 'page-head__actions' }, h('a', { class: 'btn btn--subtle', href: base + '/diff/' + cmpBase.id + '/' + newest.id },
+            icon('compare'), t('cl.compareVersions'))) : null),
         h('nav', { class: 'tabs cl-tabs', 'aria-label': t('cl.tabsAria') },
           h('a', { class: 'tab', href: base, 'aria-current': isPrec ? null : 'page', 'aria-selected': String(!isPrec) }, icon('checklist'), t('cl.tabVersions')),
           h('a', { class: 'tab', href: base + '/precedents', 'aria-current': isPrec ? 'page' : null, 'aria-selected': String(isPrec) }, icon('scale'), t('cl.tabPrecedents'))),
@@ -122,23 +122,27 @@
       this.expanded = new Set(restored && saved.expanded ? saved.expanded : []);
 
       var prev = this.previous(v);
-      var publishBtn = !v.is_active ? h('button', { class: 'btn btn--primary', type: 'button', onClick: function () { self.publish(v, this); } }, icon('checkCircle'), t('cl.makeActive')) : null;
-      var applyBtn = h('button', { class: v.is_active ? 'btn btn--primary' : 'btn', type: 'button', onClick: function () {
+      var publishBtn = !v.is_active ? h('button', { class: 'btn btn--primary', type: 'button', 'data-tip': t('cl.publishApplyTip'), onClick: function () { self.publish(v, this, true); } }, icon('checkCircle'), t('cl.publishApply')) : null;
+      var applyBtn = v.is_active ? h('button', { class: 'btn btn--subtle', type: 'button', 'data-tip': t('cl.applyActiveTip'), onClick: function () {
         Promise.all([self.ensureConfig(act), self.ensureConfig(prev)]).then(function () {
-          CQA.openApplyDialog({ version: v, active: act, baseline: act && act.id !== v.id ? act : prev });
+          CQA.openApplyDialog({ version: v, active: act, baseline: prev });
         });
-      } }, icon('flash'), t('cl.apply'));
-      var dryBtn = h('button', { class: v.is_active ? 'btn' : 'btn btn--primary', type: 'button', title: t('cl.dryRunTitle'), onClick: function () { self.dryRun(v, this); } }, icon('compare'), t('cl.dryRun'));
-      if (!v.is_active && publishBtn) publishBtn.className = 'btn';
+      } }, icon('flash'), t('cl.apply')) : null;
+      var dryBtn = !v.is_active ? h('button', { class: 'btn', type: 'button', 'data-tip': t('cl.dryRunTitle'), onClick: function () { self.dryRun(v, this); } }, icon('compare'), t('cl.dryRun')) : null;
       var cmp = !v.is_active && act ? h('a', { class: 'btn btn--subtle', href: '#/checklists/' + cid + '/diff/' + act.id + '/' + v.id }, icon('compare'), t('cl.compareWithActive'))
         : prev ? h('a', { class: 'btn btn--subtle', href: '#/checklists/' + cid + '/diff/' + prev.id + '/' + v.id }, icon('compare'), t('cl.compareWithPrev', { v: prev.version })) : null;
 
       this.notice = h('div', { class: 'stack' });
+      if (v.is_active && !(this.query && this.query.saved)) {
+        this.notice.appendChild(h('div', { class: 'cl-how' }, icon('info', 'icon--16'), h('span', null, t('cl.howActive'))));
+      }
       if (this.query && this.query.saved) {
-        this.notice.appendChild(ui.msgbar('success', t('cl.savedTitle', { v: v.version }), t(v.is_active ? 'cl.savedActiveText' : 'cl.savedDryText'),
-          h('div', { class: 'row' },
-            h('button', { class: 'btn btn--small btn--primary', type: 'button', onClick: function () { self.dryRun(v, this); } }, icon('compare'), t('cl.dryRun')),
-            publishBtn ? h('button', { class: 'btn btn--small', type: 'button', onClick: function () { self.publish(v, this); } }, t('cl.makeActive')) : null)));
+        this.notice.appendChild(ui.nextStep({ icon: 'compare',
+          title: t('cl.savedTitle', { v: v.version }) + '. ' + t('cl.nextCheck'),
+          text: t(v.is_active ? 'cl.savedActiveText' : 'cl.savedDryText'),
+          actions: [
+            !v.is_active ? { label: t('cl.dryRun'), primary: true, icon: 'compare', onClick: function (e) { self.dryRun(v, e.currentTarget); } } : null,
+            !v.is_active ? { label: t('cl.publishApply'), icon: 'checkCircle', onClick: function (e) { self.publish(v, e.currentTarget, true); } } : null] }));
       }
       if (restored) {
         this.notice.appendChild(ui.msgbar('info', t('cl.draftRestored'), null,
@@ -146,17 +150,20 @@
       }
       this.errorsBox = h('div', { 'aria-live': 'assertive' });
 
+      var focus = this.query && this.query.crit;
+      if (focus) this.expanded.add(focus);
       this.editor = document.createElement('cqa-checklist-editor');
-      this.editor.data = { config: this.draft, base: v.config, expanded: this.expanded };
+      this.editor.data = { config: this.draft, base: v.config, expanded: this.expanded, focus: focus || null };
 
       this.comment = h('input', { class: 'input', id: 'cl-comment', placeholder: t('cl.commentPlaceholder'), value: (restored && saved.comment) || '', maxlength: '300' });
       this.dirtyEl = h('span', { class: 'cl-savebar__status', 'aria-live': 'polite' });
-      this.resetBtn = h('button', { class: 'btn', type: 'button', onClick: function () { self.reset(); } }, t('cl.discard'));
-      this.saveBtn = h('button', { class: 'btn btn--primary', type: 'button', onClick: function () { self.save(); } }, icon('checkCircle'), t('cl.saveNew'));
+      this.resetBtn = h('button', { class: 'btn btn--subtle', type: 'button', onClick: function () { self.reset(); } }, t('cl.discard'));
+      this.saveOnlyBtn = h('button', { class: 'btn', type: 'button', 'data-tip': t('cl.saveOnlyTip'), onClick: function () { self.save(false); } }, t('cl.saveOnly'));
+      this.saveBtn = h('button', { class: 'btn btn--primary', type: 'button', 'data-tip': t('cl.saveCheckTip'), onClick: function () { self.save(true); } }, icon('compare'), t('cl.saveCheck'));
       var savebar = h('div', { class: 'cl-savebar', role: 'region', 'aria-label': t('cl.saveRegion') },
         this.dirtyEl,
         h('label', { class: 'sr-only', for: 'cl-comment' }, t('cl.comment')),
-        this.comment, this.resetBtn, this.saveBtn);
+        this.comment, this.resetBtn, this.saveOnlyBtn, this.saveBtn);
 
       CQA.dom.replace(this.main,
         h('section', { class: 'card cl-vhead' },
@@ -215,6 +222,7 @@
       this.dirtyEl.classList.toggle('is-dirty', dirty);
       if (this.dirtyEl.parentNode) this.dirtyEl.parentNode.classList.toggle('is-dirty', dirty);
       this.saveBtn.disabled = !dirty;
+      this.saveOnlyBtn.disabled = !dirty;
       this.resetBtn.disabled = !dirty;
       if (!initial) this.persist();
     }
@@ -266,35 +274,52 @@
       if (ctl) ctl.focus({ preventScroll: true });
     }
 
-    save() {
+    save(check) {
       var self = this, v = this.version;
       CQA.dom.clear(this.errorsBox);
       var errs = CQA.scoring.validateConfig(this.draft);
       if (errs.length) { this.showErrors(errs); return; }
       this.editor.clearErrors();
-      this.saveBtn.disabled = true;
-      CQA.dom.replace(this.saveBtn, ui.spinner(), t('cl.saving'));
+      var btn = check ? this.saveBtn : this.saveOnlyBtn;
+      this.saveBtn.disabled = true; this.saveOnlyBtn.disabled = true;
+      CQA.dom.replace(btn, ui.spinner(), check ? t('cl.savingCheck') : t('cl.saving'));
       var comment = this.comment.value.trim() || null;
       CQA.api.createChecklistVersion(this.cid, this.draft, comment).then(function (nv) {
         CQA.store.set(self.draftKey(v), null, true);
         if (!nv.config) nv.config = U.deepClone(self.draft);
         self.versions.unshift(nv);
         self.versions.sort(function (a, b) { return b.version - a.version; });
-        ui.toast(t('cl.savedTitle', { v: nv.version }), { tone: 'success' });
-        CQA.router.go('/checklists/' + encodeURIComponent(self.cid) + '/v/' + nv.id, { saved: 1 });
+        if (!check) {
+          ui.toast(t('cl.savedTitle', { v: nv.version }), { tone: 'success' });
+          CQA.router.go('/checklists/' + encodeURIComponent(self.cid) + '/v/' + nv.id, { saved: 1 });
+          return;
+        }
+        return CQA.api.dryRun(nv.id, { sample: 10 }).then(function (run) {
+          ui.toast(t('cl.savedChecking', { v: nv.version }), { tone: 'success' });
+          CQA.router.go('/runs/' + run.id + '/diff');
+        }, function (err) {
+          var ve = CQA.api.validationErrors(err);
+          ui.toast(t('cl.dryFailed'), { tone: 'warning', detail: ve.length ? ve.map(function (x) { return x.msg; }).join('; ') : err.message, timeout: 12000 });
+          CQA.router.go('/checklists/' + encodeURIComponent(self.cid) + '/v/' + nv.id, { saved: 1 });
+        });
       }, function (err) {
-        self.saveBtn.disabled = false;
-        CQA.dom.replace(self.saveBtn, icon('checkCircle'), t('cl.saveNew'));
+        self.saveBtn.disabled = false; self.saveOnlyBtn.disabled = false;
+        CQA.dom.replace(self.saveBtn, icon('compare'), t('cl.saveCheck'));
+        CQA.dom.replace(self.saveOnlyBtn, t('cl.saveOnly'));
         var ve = CQA.api.validationErrors(err);
         if (ve.length) self.showErrors(ve, t('cl.serverErrors'));
         else CQA.dom.replace(self.errorsBox, ui.msgbar('danger', t('cl.saveFailed'), err.message));
       });
     }
 
-    publish(v, btn) {
+    publish(v, btn, thenApply, confirmed) {
       var self = this;
       if (this.dirty) {
         ui.toast(t('cl.publishDirty'), { tone: 'warning' });
+        return;
+      }
+      if (!confirmed) {
+        ui.confirm(t('cl.publishConfirm', { v: v.version }), t('cl.publishConfirmText'), t('cl.publishConfirmOk')).then(function (ok) { if (ok) self.publish(v, btn, thenApply, true); });
         return;
       }
       if (btn) btn.disabled = true;
@@ -307,6 +332,10 @@
         self.query = {};
         CQA.router.setQuery({});
         self.renderAll();
+        if (thenApply) {
+          var prev = self.previous(v);
+          self.ensureConfig(prev).then(function () { CQA.openApplyDialog({ version: v, active: v, baseline: prev }); });
+        }
       }, function (err) {
         if (btn) btn.disabled = false;
         ui.toast(t('cl.publishFailed'), { tone: 'error', detail: err.message });

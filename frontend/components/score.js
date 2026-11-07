@@ -6,7 +6,7 @@
   function num(v) { return v == null || v === '' || v === 'null' ? null : Number(v); }
 
   class CqaScore extends HTMLElement {
-    static get observedAttributes() { return ['value', 'original', 'size', 'max']; }
+    static get observedAttributes() { return ['value', 'original', 'size', 'max', 'muted']; }
     connectedCallback() { this.render(); }
     attributeChangedCallback() { if (this.isConnected) this.render(); }
     render() {
@@ -14,7 +14,7 @@
       var o = num(this.getAttribute('original'));
       var size = this.getAttribute('size');
       var showMax = this.hasAttribute('max');
-      this.className = 'score--' + U.scoreTone(v) + (size ? ' score--' + size : '');
+      this.className = 'score--' + (this.hasAttribute('muted') ? 'muted' : U.scoreTone(v)) + (size ? ' score--' + size : '');
       this.textContent = '';
       var differs = o != null && v != null && Math.abs(o - v) >= 0.005;
       var label = v == null ? CQA.t('score.none') : CQA.t('score.aria', { v: fmt.score(v) }) + (differs ? '. ' + CQA.t('score.originalAria', { v: fmt.score(o) }) : '');
@@ -33,6 +33,7 @@
     if (original != null) el.setAttribute('original', original);
     if (opts.size) el.setAttribute('size', opts.size);
     if (opts.max) el.setAttribute('max', '');
+    if (opts.muted) el.setAttribute('muted', '');
     return el;
   };
 

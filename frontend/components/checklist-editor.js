@@ -54,8 +54,8 @@
           h('label', { class: 'field__label', for: ta.id }, t('cl.channelRules', { ch: CQA.util.channelLabel(ch) })), ta);
       });
 
-      var general = h('section', { class: 'card stack stack--l', 'aria-labelledby': 'cl-general-h' },
-        h('h2', { class: 'card__title', id: 'cl-general-h' }, t('cl.generalTitle')),
+      var general = h('section', { class: 'stack stack--l', 'aria-labelledby': 'cl-general-h' },
+        h('h3', { class: 'card__title', id: 'cl-general-h' }, t('cl.generalTitle')),
         h('div', { class: 'field', 'data-loc': 'title' }, h('label', { class: 'field__label', for: 'cl-title' }, t('cl.title')), title, h('div', { class: 'field__error' })),
         h('div', { class: 'field', 'data-loc': 'general_rules' },
           h('label', { class: 'field__label', for: 'cl-general' }, t('cl.generalRules')),
@@ -70,9 +70,9 @@
 
       // ---- секции
       this.sectionsBox = h('div', { class: 'cl-sections' });
-      var sections = h('section', { class: 'card', 'aria-labelledby': 'cl-sections-h' },
+      var sections = h('section', { 'aria-labelledby': 'cl-sections-h' },
         h('div', { class: 'card__header' },
-          h('h2', { class: 'card__title', id: 'cl-sections-h' }, t('cl.sections')),
+          h('h3', { class: 'card__title', id: 'cl-sections-h' }, t('cl.sections')),
           h('button', { class: 'btn btn--small', type: 'button', onClick: function () { self.addSection(); } }, icon('add'), t('cl.addSection'))),
         this.sectionsBox);
 
@@ -88,9 +88,30 @@
             h('button', { class: 'btn btn--primary btn--small', type: 'button', onClick: function () { self.addCriterion(); } }, icon('add'), t('cl.addCriterion')))),
         this.weightEl, this.critError, this.critList);
 
-      this.append(general, sections, criteria);
+      // сначала критерии (ради них приходят), общие правила и секции — свёрнуты ниже
+      var rest = h('details', { class: 'panel dash-more cl-rest' },
+        h('summary', null, icon('chevronRight'), h('span', null, t('cl.restTitle')), h('span', { class: 'panel__meta' }, t('cl.restSub'))),
+        h('div', { class: 'dash-more__body stack stack--xl' }, general, sections));
+      this.append(criteria, rest);
       this.renderSections();
       this.renderCriteria();
+      if (this._d.focus) this.focusCriterion(this._d.focus);
+    }
+
+    /** Открыть критерий из карточки диалога («Изменить критерий»): развернуть, прокрутить, подсветить. */
+    focusCriterion(id) {
+      var self = this;
+      var ed = Array.prototype.filter.call(this.critList.querySelectorAll('cqa-criterion-editor'), function (e) { return e.c && e.c.id === id; })[0];
+      if (!ed) return;
+      if (!ed.classList.contains('is-expanded') && ed.setExpanded) ed.setExpanded(true);
+      ed.classList.add('is-focus');
+      setTimeout(function () {
+        CQA.dom.scrollIntoPane(ed, { block: 'start', margin: 16 });
+        var f = ed.querySelector('textarea, input:not([type=checkbox])');
+        if (f) f.focus({ preventScroll: true });
+      }, 60);
+      setTimeout(function () { ed.classList.remove('is-focus'); }, 2600);
+      self._d.focus = null;
     }
 
     // ------------------------------------------------------------ секции

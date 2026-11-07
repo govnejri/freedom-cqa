@@ -1,199 +1,248 @@
-/* <cqa-app> — каркас: шапка с переключателем роли (руководитель / QA / оператор), разделы роли, шестерёнка настроек,
-   индикатор режима (API/демо), область страниц. Роль запоминается в localStorage; прямая ссылка на раздел другой роли
-   переключает роль. На узком экране разделы и роль — в меню-«гамбургере». */
+/* <cqa-app> — каркас: графитовое меню слева с группами по задачам (руководитель / QA / оператор),
+   внизу «Начало работы» и «Настройки»; сверху — «хлебные крошки» и поиск (Ctrl+K); справа — рабочая область.
+   Группы меню — не режимы: ничего не переключается само. На узком экране меню выезжает по кнопке. */
 (function (CQA) {
   'use strict';
-  var h = CQA.h, icon = CQA.icon, t = CQA.t, ui = CQA.ui;
+  var h = CQA.h, icon = CQA.icon, t = CQA.t, ui = CQA.ui, fmt = CQA.fmt;
 
-  var LS_ROLE = 'cqa.role';
   var NAV = {
     dashboard: { href: '#/', icon: 'home', label: 'nav.dashboard' },
     risks: { href: '#/risks', icon: 'shield', label: 'nav.risks' },
-    slices: { href: '#/slices', icon: 'grid', label: 'nav.slices' },
+    team: { href: '#/operators', icon: 'people', label: 'nav.team' },
     assistant: { href: '#/assistant', icon: 'sparkle', label: 'nav.assistant' },
-    conversations: { href: '#/conversations', icon: 'chat', label: 'nav.conversations' },
+    queue: { href: '#/conversations', icon: 'inbox', label: 'nav.queue' },
     appeals: { href: '#/appeals', icon: 'scale', label: 'nav.appeals' },
     checklist: { href: null, icon: 'checklist', label: 'nav.checklist' },
-    quality: { href: '#/quality', icon: 'chart', label: 'nav.quality' },
-    profile: { href: null, icon: 'person', label: 'nav.profile' },
-    trainer: { href: '#/trainer', icon: 'target', label: 'nav.trainer' },
-    tutor: { href: '#/tutor', icon: 'book', label: 'nav.tutor' }
+    quality: { href: '#/quality', icon: 'target', label: 'nav.quality' },
+    profile: { href: '#/me', icon: 'person', label: 'nav.profile' },
+    learning: { href: '#/trainer', icon: 'cap', label: 'nav.learning' },
+    settings: { href: '#/settings', icon: 'settings', label: 'nav.settings' }
   };
-  var ROLES = [
-    { key: 'lead', icon: 'chart', items: ['dashboard', 'risks', 'slices', 'assistant'] },
-    { key: 'qa', icon: 'checklist', items: ['conversations', 'appeals', 'checklist', 'quality'] },
-    { key: 'operator', icon: 'headset', items: ['profile', 'trainer', 'tutor'] }
+  var GROUPS = [
+    { key: 'lead', items: ['dashboard', 'risks', 'team', 'assistant'] },
+    { key: 'qa', items: ['queue', 'appeals', 'checklist', 'quality'] },
+    { key: 'operator', items: ['profile', 'learning'] }
   ];
-  function roleDef(key) { return ROLES.filter(function (r) { return r.key === key; })[0] || null; }
+  var NARROW = '(max-width: 960px)';
 
   function navHref(key) {
     if (key === 'checklist') return '#/checklists/' + encodeURIComponent(CQA.config.checklistId);
-    if (key === 'profile') { var me = CQA.me.get(); return me ? '#/operators/' + encodeURIComponent(me) : '#/operators'; }
     return NAV[key].href;
   }
+  CQA.navHref = navHref;
 
-  /** Домашняя страница роли — куда ведёт переключение роли. */
-  CQA.roleHome = function (role) { var r = roleDef(role); return r ? navHref(r.items[0]) : '#/'; };
-  CQA.roles = ROLES.map(function (r) { return r.key; });
+  /** Подразделы одного пункта меню: «Команда» (операторы · срезы), «Обучение» (тренажёр · тьютор). */
+  CQA.subnav = function (nav, current) {
+    var items = nav === 'team'
+      ? [{ k: 'operators', href: '#/operators', icon: 'people', label: 'team.operators' }, { k: 'slices', href: '#/slices', icon: 'grid', label: 'team.slices' }]
+      : [{ k: 'trainer', href: '#/trainer', icon: 'target', label: 'learning.trainer' }, { k: 'tutor', href: '#/tutor', icon: 'book', label: 'learning.tutor' }];
+    return h('nav', { class: 'subnav', 'aria-label': t(nav === 'team' ? 'nav.team' : 'nav.learning') }, items.map(function (it) {
+      return h('a', { href: it.href, 'aria-current': it.k === current ? 'page' : null }, icon(it.icon), t(it.label));
+    }));
+  };
+  CQA.navGroups = GROUPS;
+  CQA.navItems = NAV;
+
+  /** Последняя часть «хлебных крошек» для экранов-деталей. */
+  function detailOf(cur) {
+    var p = cur.params || {}, tag = cur.route.tag;
+    if (p.uid) return fmt.externalId(p.uid);
+    switch (tag) {
+      case 'cqa-page-appeal': return t('crumb.appeal', { id: p.id });
+      case 'cqa-page-operator': return p.name;
+      case 'cqa-page-slices': return t('team.slices');
+      case 'cqa-page-run': return t('crumb.run', { id: p.id });
+      case 'cqa-page-run-diff': return t('crumb.runDiff');
+      case 'cqa-page-log': return t('crumb.log');
+      case 'cqa-page-trainer-session': return t('crumb.session', { id: p.id });
+      case 'cqa-page-trainer-new': return t('crumb.newSession');
+      case 'cqa-page-tutor': return t('nav.tutor');
+      case 'cqa-page-checklist':
+        if (p.tab === 'precedents') return t('cl.tabPrecedents');
+        if (p.a && p.b) return t('crumb.compare');
+        return null;
+      default: return null;
+    }
+  }
 
   class CqaApp extends HTMLElement {
     connectedCallback() {
       if (this._built) return;
       this._built = true;
       var self = this;
-      this.role = CQA.store.get(LS_ROLE, null);
-      if (!roleDef(this.role)) this.role = null;
-      this.nav = h('nav', { class: 'app-nav', 'aria-label': t('nav.aria') });
-      this.roleSeg = h('div', { class: 'segmented role-switch', role: 'group', 'aria-label': t('roles.aria') });
-      this.roleBtns = {};
-      ROLES.forEach(function (r) {
-        var b = h('button', { type: 'button', 'aria-pressed': 'false', title: t('roles.' + r.key + 'Title'),
-          onClick: function () { self.switchRole(r.key); } }, icon(r.icon), h('span', null, t('roles.' + r.key)));
-        self.roleBtns[r.key] = b;
-        self.roleSeg.appendChild(b);
-      });
-      this.gear = h('a', { class: 'btn btn--subtle btn--icon app-gear', href: '#/settings', 'aria-label': t('nav.settings'), title: t('nav.settings') }, icon('settings'));
-      this.modeBtn = h('button', { class: 'btn btn--subtle btn--small', type: 'button', onClick: this.openConnection.bind(this) });
-      this.menuBtn = h('button', { class: 'btn btn--subtle btn--icon app-menu-btn', type: 'button', 'aria-label': t('nav.menu'), 'aria-expanded': 'false', 'aria-controls': 'app-menu',
+      this.mq = window.matchMedia(NARROW);
+      this.links = {};
+      this.counts = {};
+      this.nav = h('nav', { class: 'rail__nav', 'aria-label': t('nav.aria') });
+      this.modeBtn = h('button', { class: 'rail__mode', type: 'button', onClick: this.openConnection.bind(this) });
+      this.rail = h('aside', { class: 'rail', id: 'app-rail', 'aria-label': t('nav.menu') },
+        h('div', { class: 'row row--nowrap' },
+          h('a', { class: 'rail__brand', href: '#/', 'aria-label': t('app.title') },
+            h('span', { class: 'rail__mark', 'aria-hidden': 'true' }, icon('check')),
+            h('span', { class: 'rail__name' }, t('app.name'), h('small', null, t('app.subtitle')))),
+          h('button', { class: 'btn btn--subtle btn--icon rail__close', type: 'button', 'aria-label': t('nav.closeMenu'), onClick: function () { self.closeMenu(true); } }, icon('close'))),
+        this.nav,
+        h('div', { class: 'rail__foot' },
+          h('button', { class: 'rail__link', type: 'button', onClick: function () { self.closeMenu(); CQA.guide.open(); } },
+            icon('compass'), h('span', null, t('guide.nav'))),
+          this.settingsLink = h('a', { class: 'rail__link', href: '#/settings' }, icon('settings'), h('span', null, t('nav.settings'))),
+          this.modeBtn));
+      this.scrim = h('div', { class: 'rail-scrim', 'aria-hidden': 'true', onClick: function () { self.closeMenu(true); } });
+      this.menuBtn = h('button', { class: 'btn btn--subtle btn--icon topbar__menu', type: 'button', 'aria-label': t('nav.menu'), 'aria-expanded': 'false', 'aria-controls': 'app-rail',
         onClick: function () { self.toggleMenu(); } }, icon('menu'));
-      this.menu = h('div', { class: 'app-menu', id: 'app-menu', hidden: true, tabindex: '-1', role: 'region', 'aria-label': t('nav.menu') });
-      this.outlet = h('main', { class: 'app-main', id: 'main', tabindex: '-1' }, h('div', { class: 'page' }, CQA.ui.skeleton('tiles', 6)));
+      this.crumbs = h('div', { class: 'crumbs' });
+      var searchBtn = h('button', { class: 'search-btn', type: 'button', 'aria-label': t('palette.open'), onClick: function () { CQA.palette.open(); } },
+        icon('search'), h('span', null, t('palette.placeholderShort')), h('kbd', null, 'Ctrl K'));
+      this.outlet = h('main', { class: 'app-main', id: 'main', tabindex: '-1' }, h('div', { class: 'page' }, ui.skeleton('tiles', 4)));
+      this.banner = h('div', { class: 'offline', role: 'alert', hidden: true });
       this.textContent = '';
       this.append(
         h('a', { class: 'skip-link', href: '#main', onClick: function (e) { e.preventDefault(); document.getElementById('main').focus(); } }, t('nav.skip')),
-        h('header', { class: 'app-header' },
-          h('a', { class: 'app-brand', href: '#/', 'aria-label': t('app.title') },
-            h('span', { class: 'app-brand__logo', 'aria-hidden': 'true' }, 'CQA'),
-            h('span', { class: 'app-brand__text' }, t('app.name')),
-            h('span', { class: 'app-brand__sub' }, t('app.subtitle'))),
-          this.roleSeg,
-          this.nav,
-          h('div', { class: 'app-header__end' }, this.modeBtn, this.gear, this.menuBtn)),
-        this.menu,
-        this.outlet);
+        this.rail, this.scrim,
+        h('div', { class: 'app-body' },
+          h('header', { class: 'topbar' }, this.menuBtn, this.crumbs, h('div', { class: 'topbar__end' }, searchBtn)),
+          this.banner,
+          this.outlet));
       this.renderNav();
+      this.syncInert();
+      this.mq.addEventListener('change', function () { self.closeMenu(); self.syncInert(); });
       CQA.router.onChange(function (cur) {
         self.closeMenu();
-        var roles = cur.route && cur.route.roles;
-        if (roles && roles.length && roles.indexOf(self.role) < 0) self.setRole(roles[0]);
-        else if (!self.role) self.setRole('lead');
         self.current = cur;
         self.highlight();
+        self.renderCrumbs();
       });
       document.addEventListener('cqa-appeals-changed', function () { self.refreshCounts(); });
-      document.addEventListener('cqa-me-changed', function () { self.renderNav(); });
-      document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !self.menu.hidden) { self.closeMenu(); self.menuBtn.focus(); } });
-      document.addEventListener('click', function (e) {
-        if (!self.menu.hidden && !self.menu.contains(e.target) && !self.menuBtn.contains(e.target)) self.closeMenu();
+      document.addEventListener('cqa-compliance-changed', function () { self.refreshCounts(); });
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && self.classList.contains('is-menu-open')) { self.closeMenu(true); return; }
+        // Ctrl+K / ⌘K — палитра (по коду клавиши: работает и в русской раскладке)
+        if ((e.ctrlKey || e.metaKey) && !e.altKey && (e.code === 'KeyK' || (e.key || '').toLowerCase() === 'k')) {
+          e.preventDefault();
+          CQA.palette.open();
+        }
       });
-    }
-
-    setRole(role) {
-      if (!roleDef(role)) return;
-      this.role = role;
-      CQA.store.set(LS_ROLE, role);
-      document.documentElement.setAttribute('data-role', role);
-      this.renderNav();
-    }
-
-    /** Переключение роли пользователем — переход на домашний раздел роли. */
-    switchRole(role) {
-      if (role === this.role) { this.closeMenu(); return; }
-      this.setRole(role);
-      location.hash = CQA.roleHome(role);
     }
 
     renderNav() {
-      var self = this, r = roleDef(this.role || 'lead');
-      this.links = {};
+      var self = this;
       CQA.dom.clear(this.nav);
-      r.items.forEach(function (k) {
-        var n = NAV[k];
-        var a = h('a', { href: navHref(k) }, icon(n.icon), h('span', { class: 'nav-label' }, t(n.label)));
-        a.setAttribute('aria-label', t(n.label));
-        if (k === 'appeals') { self.appealsBadge = h('span', { class: 'badge badge--count badge--brand-filled', hidden: true }); a.appendChild(self.appealsBadge); }
-        self.links[k] = a;
-        self.nav.appendChild(a);
+      this.links = {};
+      GROUPS.forEach(function (g) {
+        self.nav.appendChild(h('div', { class: 'rail__group', id: 'rail-g-' + g.key }, t('roles.' + g.key)));
+        g.items.forEach(function (k) {
+          var n = NAV[k];
+          var a = h('a', { class: 'rail__link', href: navHref(k), 'data-nav': k }, icon(n.icon), h('span', null, t(n.label)));
+          if (k === 'appeals' || k === 'risks') {
+            var c = h('span', { class: 'rail__count' + (k === 'risks' ? ' rail__count--gross' : ''), hidden: true });
+            self.counts[k] = c;
+            a.appendChild(c);
+          }
+          self.links[k] = a;
+          self.nav.appendChild(a);
+        });
       });
-      Object.keys(this.roleBtns).forEach(function (k) { self.roleBtns[k].setAttribute('aria-pressed', String(k === (self.role || 'lead'))); });
-      if (this.appealsBadge && this._appealsN != null) this.setAppealsBadge(this._appealsN);
-      this.renderMenu();
       this.highlight();
     }
 
     highlight() {
       var cur = this.current, self = this;
       var key = cur && cur.route ? cur.route.nav : null;
-      // «Мой профиль» подсвечиваем на своём профиле и на списке, но не на чужом профиле
-      var me = CQA.me.get();
-      if (key === 'profile' && cur.params && cur.params.name && me && cur.params.name.toLocaleLowerCase('ru') !== me.toLocaleLowerCase('ru')) key = null;
-      Object.keys(this.links || {}).forEach(function (k) {
+      // свой профиль из «Команды» подсвечивает «Мой профиль»
+      if (key === 'team' && cur.route.tag === 'cqa-page-operator' && CQA.me.get() && cur.params.name &&
+          cur.params.name.toLocaleLowerCase('ru') === CQA.me.get().toLocaleLowerCase('ru')) key = 'profile';
+      Object.keys(this.links).forEach(function (k) {
         if (k === key) self.links[k].setAttribute('aria-current', 'page'); else self.links[k].removeAttribute('aria-current');
       });
-      if (key === 'settings') this.gear.setAttribute('aria-current', 'page'); else this.gear.removeAttribute('aria-current');
-      Array.prototype.forEach.call(this.menu.querySelectorAll('a[data-nav]'), function (a) {
-        if (a.getAttribute('data-nav') === key) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
-      });
+      if (key === 'settings') this.settingsLink.setAttribute('aria-current', 'page'); else this.settingsLink.removeAttribute('aria-current');
     }
 
-    // ------------------------------------------------------------ меню на узком экране
-    renderMenu() {
-      var self = this, cur = this.role || 'lead';
-      var list = h('div', { class: 'app-menu__roles' });
-      ROLES.forEach(function (r) {
-        var sec = h('section', { class: 'app-menu__role' + (r.key === cur ? ' is-current' : '') },
-          h('button', { class: 'app-menu__role-head', type: 'button', 'aria-pressed': String(r.key === cur), onClick: function () { self.switchRole(r.key); } },
-            icon(r.icon), h('span', null, t('roles.' + r.key)), r.key === cur ? ui.badge(t('roles.current'), 'brand') : null));
-        var ul = h('ul', { class: 'app-menu__links' });
-        r.items.forEach(function (k) {
-          ul.appendChild(h('li', null, h('a', { href: navHref(k), 'data-nav': k, onClick: function () { if (r.key !== cur) self.setRole(r.key); } },
-            icon(NAV[k].icon), h('span', null, t(NAV[k].label)))));
-        });
-        sec.appendChild(ul);
-        list.appendChild(sec);
-      });
-      CQA.dom.replace(this.menu, list,
-        h('div', { class: 'app-menu__foot' },
-          h('a', { class: 'btn', href: '#/settings', 'data-nav': 'settings' }, icon('settings'), t('nav.settings'))));
+    renderCrumbs() {
+      var cur = this.current;
+      if (!cur || !cur.route || !cur.route.nav) { CQA.dom.replace(this.crumbs, h('b', null, t('notfound.title'))); return; }
+      var r = cur.route, parts = [];
+      if (r.group) parts.push(h('span', null, t('roles.' + r.group)));
+      var navKey = r.nav;
+      var detail = detailOf(cur);
+      var label = t(NAV[navKey].label);
+      parts.push(detail ? h('a', { href: navHref(navKey) }, label) : h('b', { 'aria-current': 'page' }, label));
+      if (detail) parts.push(h('b', { 'aria-current': 'page' }, detail));
+      var out = [];
+      parts.forEach(function (p, i) { if (i) out.push(h('span', { class: 'sep', 'aria-hidden': 'true' }, '/')); out.push(p); });
+      CQA.dom.replace(this.crumbs, h('nav', { class: 'crumbs', 'aria-label': t('nav.crumbs') }, out));
     }
 
-    toggleMenu() { if (this.menu.hidden) this.openMenu(); else this.closeMenu(); }
+    // ------------------------------------------------------------ узкий экран
+    syncInert() {
+      var off = this.mq.matches && !this.classList.contains('is-menu-open');
+      if (off) this.rail.setAttribute('inert', ''); else this.rail.removeAttribute('inert');
+    }
+    toggleMenu() { if (this.classList.contains('is-menu-open')) this.closeMenu(true); else this.openMenu(); }
     openMenu() {
-      this.renderMenu();
-      this.highlight();
-      this.menu.hidden = false;
+      this.classList.add('is-menu-open');
       this.menuBtn.setAttribute('aria-expanded', 'true');
-      this.menu.focus({ preventScroll: true });
+      this.syncInert();
+      var cur = this.rail.querySelector('[aria-current="page"]') || this.rail.querySelector('a');
+      if (cur) cur.focus({ preventScroll: true });
     }
-    closeMenu() {
-      if (!this.menu || this.menu.hidden) return;
-      this.menu.hidden = true;
+    closeMenu(focusBtn) {
+      if (!this.classList.contains('is-menu-open')) return;
+      this.classList.remove('is-menu-open');
       this.menuBtn.setAttribute('aria-expanded', 'false');
+      this.syncInert();
+      if (focusBtn) this.menuBtn.focus();
     }
 
+    // ------------------------------------------------------------ готовность: режим и счётчики
     ready() {
       var mock = CQA.api.mode === 'mock';
-      CQA.dom.replace(this.modeBtn,
-        icon(mock ? 'database' : 'plug'),
-        h('span', { class: 'mode-label' }, mock ? t('mode.mock') : t('mode.api')));
-      this.modeBtn.className = 'btn btn--small mode-btn ' + (mock ? 'mode-btn--mock' : 'mode-btn--api');
-      this.modeBtn.setAttribute('title', mock ? t('mode.mockReason.' + CQA.api.reason) : t('mode.apiTitle', { base: CQA.api.base }));
+      CQA.dom.replace(this.modeBtn, h('i', { 'aria-hidden': 'true' }), h('span', null, mock ? t('mode.mock') : t('mode.apiOn')));
+      this.modeBtn.classList.toggle('is-mock', mock);
+      this.modeBtn.setAttribute('data-tip', mock ? t('mode.mockReason.' + CQA.api.reason) : t('mode.apiTitle', { base: CQA.api.base }));
+      this.renderBanner();
       this.refreshCounts();
+    }
+
+    /** Нет связи с API — заметно: демо-цифры не должны выглядеть настоящими. Явный ?mock=1 баннера не даёт. */
+    renderBanner() {
+      var self = this, api = CQA.api;
+      if (api.mode !== 'mock' || api.reason === 'forced') { this.banner.hidden = true; return; }
+      var status = h('span', { class: 'offline__status' }, api.reason === 'unreachable' ? t('offline.auto') : '');
+      var retry = h('button', { class: 'btn btn--small', type: 'button' }, icon('refresh'), t('offline.retry'));
+      retry.addEventListener('click', function () {
+        retry.disabled = true;
+        CQA.dom.replace(retry, ui.spinner(), t('offline.checking'));
+        api.retryApi().then(function () { location.reload(); }, function () {
+          retry.disabled = false;
+          CQA.dom.replace(retry, icon('refresh'), t('offline.retry'));
+          status.textContent = t('offline.still');
+        });
+      });
+      CQA.dom.replace(this.banner,
+        icon('warning'),
+        h('span', { class: 'offline__text' }, h('b', null, api.reason === 'unreachable' ? t('offline.title') : t('offline.noApiTitle')), ' ', t('offline.text')),
+        status,
+        api.reason === 'unreachable' ? retry : h('button', { class: 'btn btn--small', type: 'button', onClick: function () { self.openConnection(); } }, icon('plug'), t('offline.connect')));
+      this.banner.hidden = false;
+      if (api.reason === 'unreachable') api.watchApi(function () { location.reload(); });
     }
 
     refreshCounts() {
       var self = this;
-      CQA.api.appeals('open').then(function (list) { self.setAppealsBadge(list.length); })
-        .catch(function () { self._appealsN = 0; if (self.appealsBadge) self.appealsBadge.hidden = true; });
+      CQA.api.appeals('open').then(function (list) { self.setCount('appeals', list.length, t('nav.openAppeals', { n: list.length })); })
+        .catch(function () { self.setCount('appeals', 0); });
+      CQA.api.risks(null).then(function (r) {
+        var pending = (r.items || []).filter(function (it) { return !it.compliance; }).length;
+        self.setCount('risks', pending, t('nav.pendingRisks', { n: pending }));
+      }).catch(function () { self.setCount('risks', 0); });
     }
 
-    setAppealsBadge(n) {
-      this._appealsN = n;
-      var badge = this.appealsBadge;
-      if (!badge) return;
-      badge.textContent = String(n);
-      badge.hidden = !n;
-      badge.setAttribute('aria-label', t('nav.openAppeals', { n: n }));
+    setCount(key, n, label) {
+      var el = this.counts[key];
+      if (!el) return;
+      el.textContent = String(n || 0);
+      el.hidden = !n;
+      if (label) el.setAttribute('aria-label', label);
     }
 
     openConnection() {
@@ -203,7 +252,7 @@
       var mock = api.mode === 'mock';
       var body = h('div', { class: 'stack stack--l' },
         ui.msgbar(mock ? 'warning' : 'success',
-          mock ? t('mode.mock') : t('mode.api'),
+          mock ? t('mode.mock') : t('mode.apiOn'),
           mock ? t('mode.mockReason.' + api.reason) : t('mode.apiTitle', { base: api.base })),
         h('div', { class: 'field' },
           h('label', { class: 'field__label', for: 'conn-base' }, t('conn.base')),
@@ -245,7 +294,7 @@
     connectedCallback() {
       this.textContent = '';
       this.appendChild(h('div', { class: 'page' },
-        ui.empty(t('notfound.title'), t('notfound.text'), h('a', { class: 'btn btn--primary', href: CQA.roleHome(CQA.store.get('cqa.role', 'lead')) }, t('notfound.home')), 'warning')));
+        ui.empty(t('notfound.title'), t('notfound.text'), h('a', { class: 'btn btn--primary', href: '#/' }, t('notfound.home')), 'warning')));
       document.title = t('notfound.title') + ' · CQA';
     }
   }

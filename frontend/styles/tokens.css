@@ -1,128 +1,206 @@
-/* Fluent 2 — web light theme (подмножество токенов). Имена совпадают с @fluentui/tokens. */
+/* CQA · токены «Pro» в палитре Freedom Broker.
+   Графитовое меню слева, светлая рабочая область, зелёный — только действие, выбор и «хорошо»;
+   янтарный — потерянные баллы; красный — только грубые нарушения.
+   Шрифт Onest (OFL) с табличными цифрами; кириллица и казахские буквы әғқңөұүһі есть.
+   Ниже — старые имена Fluent: они указывают на новые токены, поэтому старые стили страниц тоже в новой палитре. */
 :root {
-  --fontFamilyBase: "Segoe UI", "Segoe UI Web (West European)", -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", Arial, sans-serif;
-  --fontFamilyMonospace: Consolas, "Cascadia Mono", "SFMono-Regular", Menlo, "Liberation Mono", monospace;
-  --fontSizeBase100: 10px;
-  --fontSizeBase200: 12px;
-  --fontSizeBase300: 14px;
-  --fontSizeBase400: 16px;
+  color-scheme: light;
+
+  /* бренд */
+  --brand-300: #1AE276;   /* на графите: активный раздел */
+  --brand-500: #00B323;   /* индикаторы, полоски */
+  --brand-600: #00852A;   /* кнопки, ссылки: белый текст 4.8:1 */
+  --brand-700: #00701F;   /* hover */
+  --brand-50:  #E3F6E8;   /* светлый фон «хорошо», выбранное */
+  --brand-100: #C9EED3;
+  --brand-ink: #00701F;   /* зелёный текст на светлом */
+
+  /* графит меню */
+  --rail:        #323335;
+  --rail-hover:  #3D3E41;
+  --rail-active: #4A4B4F;
+  --rail-ink:    #E2E3E5;
+  --rail-ink-2:  #A9AFB8;
+  --rail-line:   #45464A;
+
+  /* рабочая область */
+  --bg:        #F4F5F7;
+  --surface:   #FFFFFF;
+  --surface-2: #F7F8FA;   /* шапки таблиц, наведение */
+  --surface-3: #EEF0F3;   /* поля, вторичные плашки */
+  --line:      #E6E8EC;
+  --line-2:    #D5D9DF;
+  --ink:       #1F2124;
+  --ink-2:     #5B6573;   /* 5.9:1 на белом */
+  --ink-3:     #7D8693;   /* только крупное и неважное */
+  --ink-4:     #B2BCC8;   /* рамки полей, неактивные иконки */
+  --link:      #00852A;
+
+  /* смысловые */
+  --amber-500: #FFA700;   /* потери баллов: полоски, точки */
+  --amber-700: #A86400;   /* текст потерь 4.7:1 */
+  --amber-50:  #FFF4DE;
+  --amber-100: #FFE6B3;
+  --red-600:   #C8322B;   /* только грубые нарушения */
+  --red-solid: #C8322B;   /* фон плашки «грубое нарушение» в обеих темах */
+  --red-700:   #A82822;
+  --red-50:    #FCECEA;
+  --red-100:   #F6CFCB;
+  --info-50:   #EEF2F7;
+
+  /* тени: смещение + мягкое размытие, без рамок */
+  --sh-1: 0 1px 2px rgba(23, 26, 31, 0.05), 0 1px 3px rgba(23, 26, 31, 0.04);
+  --sh-2: 0 2px 6px rgba(23, 26, 31, 0.06), 0 8px 24px rgba(23, 26, 31, 0.06);
+  --sh-3: 0 12px 40px rgba(23, 26, 31, 0.16), 0 2px 8px rgba(23, 26, 31, 0.08);
+  --focus-ring: 0 0 0 2px var(--surface), 0 0 0 4px var(--brand-500);
+
+  /* типографика */
+  --font: "Onest", "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
+  --mono: ui-monospace, "Cascadia Mono", "Segoe UI Mono", Consolas, "Liberation Mono", monospace;
+  --fs-12: 0.75rem;
+  --fs-13: 0.8125rem;
+  --fs-14: 0.875rem;
+  --fs-15: 0.9375rem;
+  --fs-17: 1.0625rem;
+  --fs-20: 1.25rem;
+  --fs-24: 1.5rem;
+  --fs-32: 2rem;
+  --fs-44: 2.75rem;
+
+  /* отступы и формы */
+  --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px; --s-5: 20px; --s-6: 24px; --s-8: 32px;
+  --r-panel: 14px;
+  --r-ctl: 8px;
+  --r-chip: 999px;
+  --rail-w: 236px;
+  --topbar-h: 56px;
+  --page-pad: 28px;
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+
+  /* ---- совместимость: имена Fluent → новые токены ---- */
+  --fontFamilyBase: var(--font);
+  --fontFamilyMonospace: var(--mono);
+  --fontSizeBase100: 12px;
+  --fontSizeBase200: 13px;
+  --fontSizeBase300: 15px;
+  --fontSizeBase400: 17px;
   --fontSizeBase500: 20px;
   --fontSizeBase600: 24px;
   --fontSizeHero700: 28px;
   --fontSizeHero800: 32px;
   --fontSizeHero900: 40px;
-  --lineHeightBase100: 14px;
-  --lineHeightBase200: 16px;
-  --lineHeightBase300: 20px;
-  --lineHeightBase400: 22px;
+  --lineHeightBase100: 16px;
+  --lineHeightBase200: 18px;
+  --lineHeightBase300: 22px;
+  --lineHeightBase400: 24px;
   --lineHeightBase500: 28px;
   --lineHeightBase600: 32px;
   --lineHeightHero800: 40px;
-  --lineHeightHero900: 52px;
+  --lineHeightHero900: 48px;
   --fontWeightRegular: 400;
   --fontWeightMedium: 500;
   --fontWeightSemibold: 600;
   --fontWeightBold: 700;
 
-  --colorNeutralForeground1: #242424;
-  --colorNeutralForeground2: #424242;
-  --colorNeutralForeground3: #616161;
-  --colorNeutralForeground4: #707070;
-  --colorNeutralForegroundDisabled: #bdbdbd;
+  --colorNeutralForeground1: var(--ink);
+  --colorNeutralForeground2: #3B4049;
+  --colorNeutralForeground3: var(--ink-2);
+  --colorNeutralForeground4: var(--ink-3);
+  --colorNeutralForegroundDisabled: var(--ink-4);
   --colorNeutralForegroundOnBrand: #ffffff;
   --colorNeutralForegroundInverted: #ffffff;
-  --colorBrandForeground1: #0f6cbd;
-  --colorBrandForeground2: #115ea3;
-  --colorBrandForegroundLink: #115ea3;
-  --colorBrandForegroundLinkHover: #0f548c;
-  --colorBrandForegroundLinkPressed: #0c3b5e;
+  --colorBrandForeground1: var(--brand-600);
+  --colorBrandForeground2: var(--brand-ink);
+  --colorBrandForegroundLink: var(--link);
+  --colorBrandForegroundLinkHover: var(--brand-700);
+  --colorBrandForegroundLinkPressed: var(--brand-700);
 
-  --colorNeutralBackground1: #ffffff;
-  --colorNeutralBackground1Hover: #f5f5f5;
-  --colorNeutralBackground1Pressed: #e0e0e0;
-  --colorNeutralBackground1Selected: #ebebeb;
-  --colorNeutralBackground2: #fafafa;
-  --colorNeutralBackground3: #f5f5f5;
-  --colorNeutralBackground4: #f0f0f0;
-  --colorNeutralBackground5: #ebebeb;
-  --colorNeutralBackground6: #e6e6e6;
-  --colorNeutralBackgroundInverted: #292929;
-  --colorNeutralBackgroundDisabled: #f0f0f0;
+  --colorNeutralBackground1: var(--surface);
+  --colorNeutralBackground1Hover: var(--surface-2);
+  --colorNeutralBackground1Pressed: var(--surface-3);
+  --colorNeutralBackground1Selected: var(--surface-3);
+  --colorNeutralBackground2: var(--bg);
+  --colorNeutralBackground3: var(--surface-2);
+  --colorNeutralBackground4: var(--surface-3);
+  --colorNeutralBackground5: #E9ECF0;
+  --colorNeutralBackground6: #E1E5EA;
+  --colorNeutralBackgroundInverted: var(--rail);
+  --colorNeutralBackgroundDisabled: var(--surface-3);
   --colorSubtleBackground: transparent;
-  --colorSubtleBackgroundHover: #f5f5f5;
-  --colorSubtleBackgroundPressed: #e0e0e0;
-  --colorSubtleBackgroundSelected: #ebebeb;
-  --colorBrandBackground: #0f6cbd;
-  --colorBrandBackgroundHover: #115ea3;
-  --colorBrandBackgroundPressed: #0c3b5e;
-  --colorBrandBackgroundSelected: #0f548c;
-  --colorBrandBackground2: #ebf3fc;
-  --colorBrandBackground2Hover: #cfe4fa;
-  --colorBrandBackground2Pressed: #96c6fa;
+  --colorSubtleBackgroundHover: var(--surface-2);
+  --colorSubtleBackgroundPressed: var(--surface-3);
+  --colorSubtleBackgroundSelected: var(--surface-3);
+  --colorBrandBackground: var(--brand-600);
+  --colorBrandBackgroundHover: var(--brand-700);
+  --colorBrandBackgroundPressed: var(--brand-700);
+  --colorBrandBackgroundSelected: var(--brand-700);
+  --colorBrandBackground2: var(--brand-50);
+  --colorBrandBackground2Hover: var(--brand-100);
+  --colorBrandBackground2Pressed: var(--brand-100);
 
-  --colorNeutralStroke1: #d1d1d1;
-  --colorNeutralStroke1Hover: #c7c7c7;
-  --colorNeutralStroke1Pressed: #b3b3b3;
-  --colorNeutralStroke2: #e0e0e0;
-  --colorNeutralStroke3: #f0f0f0;
-  --colorNeutralStrokeAccessible: #616161;
-  --colorNeutralStrokeAccessibleHover: #575757;
-  --colorBrandStroke1: #0f6cbd;
-  --colorBrandStroke2: #b4d6fa;
-  --colorCompoundBrandStroke: #0f6cbd;
-  --colorStrokeFocus1: #ffffff;
-  --colorStrokeFocus2: #000000;
-  --colorNeutralShadowAmbient: rgba(0, 0, 0, 0.12);
-  --colorNeutralShadowKey: rgba(0, 0, 0, 0.14);
-  --colorBackgroundOverlay: rgba(0, 0, 0, 0.4);
+  --colorNeutralStroke1: var(--line-2);
+  --colorNeutralStroke1Hover: var(--ink-4);
+  --colorNeutralStroke1Pressed: var(--ink-3);
+  --colorNeutralStroke2: var(--line);
+  --colorNeutralStroke3: var(--surface-3);
+  --colorNeutralStrokeAccessible: var(--ink-3);
+  --colorNeutralStrokeAccessibleHover: var(--ink-2);
+  --colorBrandStroke1: var(--brand-500);
+  --colorBrandStroke2: var(--brand-100);
+  --colorCompoundBrandStroke: var(--brand-500);
+  --colorStrokeFocus1: var(--surface);
+  --colorStrokeFocus2: var(--brand-500);
+  --colorNeutralShadowAmbient: rgba(23, 26, 31, 0.06);
+  --colorNeutralShadowKey: rgba(23, 26, 31, 0.08);
+  --colorBackgroundOverlay: rgba(23, 26, 31, 0.42);
 
-  --colorStatusSuccessBackground1: #f1faf1;
-  --colorStatusSuccessBackground2: #9fd89f;
-  --colorStatusSuccessBackground3: #107c10;
-  --colorStatusSuccessForeground1: #0e700e;
-  --colorStatusSuccessBorder1: #9fd89f;
-  --colorStatusDangerBackground1: #fdf3f4;
-  --colorStatusDangerBackground2: #eeacb2;
-  --colorStatusDangerBackground3: #c50f1f;
-  --colorStatusDangerForeground1: #b10e1c;
-  --colorStatusDangerBorder1: #eeacb2;
-  --colorStatusWarningBackground1: #fff9f5;
-  --colorStatusWarningBackground2: #fdcfb4;
-  --colorStatusWarningBackground3: #f7630c;
-  --colorStatusWarningForeground1: #bc4b09;
-  --colorStatusWarningForeground3: #8a3707;
-  --colorStatusWarningBorder1: #fdcfb4;
+  --colorStatusSuccessBackground1: var(--brand-50);
+  --colorStatusSuccessBackground2: var(--brand-100);
+  --colorStatusSuccessBackground3: var(--brand-500);
+  --colorStatusSuccessForeground1: var(--brand-ink);
+  --colorStatusSuccessBorder1: var(--brand-100);
+  /* «плохо» в данных — янтарный (потеря баллов); красный — только грубые нарушения и системные ошибки */
+  --colorStatusDangerBackground1: var(--amber-50);
+  --colorStatusDangerBackground2: var(--amber-100);
+  --colorStatusDangerBackground3: var(--amber-500);
+  --colorStatusDangerForeground1: var(--amber-700);
+  --colorStatusDangerBorder1: var(--amber-100);
+  --colorStatusWarningBackground1: var(--amber-50);
+  --colorStatusWarningBackground2: var(--amber-100);
+  --colorStatusWarningBackground3: var(--amber-500);
+  --colorStatusWarningForeground1: var(--amber-700);
+  --colorStatusWarningForeground3: var(--amber-700);
+  --colorStatusWarningBorder1: var(--amber-100);
 
-  /* Палитра Marigold/DarkOrange — промежуточные ступени шкалы */
-  --colorPaletteMarigoldBackground1: #fefbf4;
-  --colorPaletteMarigoldBorder1: #f9e2ae;
-  --colorPaletteMarigoldForeground1: #7a5300;
-  --colorPaletteMarigoldBackground3: #eaa300;
-  --colorPaletteDarkOrangeBackground1: #fdf6f3;
-  --colorPaletteDarkOrangeBorder1: #f4bfab;
-  --colorPaletteDarkOrangeForeground1: #a5360b;
-  --colorPaletteDarkOrangeBackground3: #da3b01;
-  --colorPaletteLightTealBackground2: #a6e9ed;
-  --colorPaletteBerryBackground1: #fdf5fc;
-  --colorPaletteBerryForeground1: #a8279d;
+  --colorPaletteMarigoldBackground1: var(--amber-50);
+  --colorPaletteMarigoldBorder1: var(--amber-100);
+  --colorPaletteMarigoldForeground1: var(--amber-700);
+  --colorPaletteMarigoldBackground3: var(--amber-500);
+  --colorPaletteDarkOrangeBackground1: var(--amber-50);
+  --colorPaletteDarkOrangeBorder1: var(--amber-100);
+  --colorPaletteDarkOrangeForeground1: var(--amber-700);
+  --colorPaletteDarkOrangeBackground3: var(--amber-500);
+  --colorPaletteLightTealBackground2: var(--brand-100);
+  --colorPaletteBerryBackground1: var(--surface-3);
+  --colorPaletteBerryForeground1: var(--ink-2);
 
   --borderRadiusNone: 0;
-  --borderRadiusSmall: 2px;
-  --borderRadiusMedium: 4px;
-  --borderRadiusLarge: 6px;
-  --borderRadiusXLarge: 8px;
-  --borderRadiusCircular: 10000px;
+  --borderRadiusSmall: 4px;
+  --borderRadiusMedium: var(--r-ctl);
+  --borderRadiusLarge: 10px;
+  --borderRadiusXLarge: var(--r-panel);
+  --borderRadiusCircular: 999px;
 
   --strokeWidthThin: 1px;
   --strokeWidthThick: 2px;
   --strokeWidthThicker: 3px;
 
-  --shadow2: 0 0 2px var(--colorNeutralShadowAmbient), 0 1px 2px var(--colorNeutralShadowKey);
-  --shadow4: 0 0 2px var(--colorNeutralShadowAmbient), 0 2px 4px var(--colorNeutralShadowKey);
-  --shadow8: 0 0 2px var(--colorNeutralShadowAmbient), 0 4px 8px var(--colorNeutralShadowKey);
-  --shadow16: 0 0 2px var(--colorNeutralShadowAmbient), 0 8px 16px var(--colorNeutralShadowKey);
-  --shadow28: 0 0 8px var(--colorNeutralShadowAmbient), 0 14px 28px var(--colorNeutralShadowKey);
-  --shadow64: 0 0 8px var(--colorNeutralShadowAmbient), 0 32px 64px var(--colorNeutralShadowKey);
+  --shadow2: var(--sh-1);
+  --shadow4: var(--sh-1);
+  --shadow8: var(--sh-2);
+  --shadow16: var(--sh-2);
+  --shadow28: var(--sh-3);
+  --shadow64: var(--sh-3);
 
   --spacingHorizontalXXS: 2px;
   --spacingHorizontalXS: 4px;
@@ -150,16 +228,73 @@
   --durationFast: 150ms;
   --durationNormal: 200ms;
   --durationSlow: 300ms;
-  --curveEasyEase: cubic-bezier(0.33, 0, 0.67, 1);
-  --curveDecelerateMid: cubic-bezier(0, 0, 0, 1);
-  --curveAccelerateMid: cubic-bezier(1, 0, 1, 1);
+  --curveEasyEase: var(--ease);
+  --curveDecelerateMid: var(--ease);
+  --curveAccelerateMid: cubic-bezier(0.6, 0, 0.8, 0.3);
 
-  /* Прикладные токены CQA */
-  --cqaHeaderHeight: 48px;
-  --cqaPagePadding: 24px;
-  --cqaHoldBackground: repeating-linear-gradient(135deg, #fff9f5 0 10px, #fff3eb 10px 20px);
+  --cqaHeaderHeight: var(--topbar-h);
+  --cqaPagePadding: var(--page-pad);
+  --cqaHoldBackground: var(--amber-50);
 }
 
-@media (max-width: 640px) {
-  :root { --cqaPagePadding: 12px; }
+/* Тёмная тема: включается в «Настройках» (data-theme) или по системе (data-theme="auto"). */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --brand-300: #3BE58A;
+  --brand-500: #1FC245;
+  --brand-600: #10913A;
+  --brand-700: #0B7A2F;
+  --brand-50:  #13301D;
+  --brand-100: #1C4A2B;
+  --brand-ink: #4FD67E;
+  --rail:        #141517;
+  --rail-hover:  #222326;
+  --rail-active: #2C2D31;
+  --rail-line:   #26272A;
+  --bg:        #1A1B1E;
+  --surface:   #232428;
+  --surface-2: #2A2C30;
+  --surface-3: #303237;
+  --line:      #34363B;
+  --line-2:    #42454B;
+  --ink:       #ECEDEF;
+  --ink-2:     #A9B0BA;
+  --ink-3:     #8A919C;
+  --ink-4:     #5D646E;
+  --link:      #4FD67E;
+  --amber-500: #FFB020;
+  --amber-700: #FFC155;
+  --amber-50:  #35290F;
+  --amber-100: #4D3A12;
+  --red-600:   #FF6B61;
+  --red-700:   #FF8A82;
+  --red-50:    #3A1D1B;
+  --red-100:   #5A2A26;
+  --info-50:   #262A31;
+  --sh-1: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --sh-2: 0 4px 16px rgba(0, 0, 0, 0.35);
+  --sh-3: 0 16px 48px rgba(0, 0, 0, 0.5);
+  --colorNeutralForeground2: #C9CED6;
+  --colorNeutralBackground5: #33363B;
+  --colorNeutralBackground6: #3A3D43;
+  --colorBackgroundOverlay: rgba(0, 0, 0, 0.55);
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-theme="auto"] {
+    color-scheme: dark;
+    --brand-300: #3BE58A; --brand-500: #1FC245; --brand-600: #10913A; --brand-700: #0B7A2F;
+    --brand-50: #13301D; --brand-100: #1C4A2B; --brand-ink: #4FD67E;
+    --rail: #141517; --rail-hover: #222326; --rail-active: #2C2D31; --rail-line: #26272A;
+    --bg: #1A1B1E; --surface: #232428; --surface-2: #2A2C30; --surface-3: #303237;
+    --line: #34363B; --line-2: #42454B; --ink: #ECEDEF; --ink-2: #A9B0BA; --ink-3: #8A919C; --ink-4: #5D646E;
+    --link: #4FD67E; --amber-500: #FFB020; --amber-700: #FFC155; --amber-50: #35290F; --amber-100: #4D3A12;
+    --red-600: #FF6B61; --red-700: #FF8A82; --red-50: #3A1D1B; --red-100: #5A2A26; --info-50: #262A31;
+    --sh-1: 0 1px 2px rgba(0, 0, 0, 0.3); --sh-2: 0 4px 16px rgba(0, 0, 0, 0.35); --sh-3: 0 16px 48px rgba(0, 0, 0, 0.5);
+    --colorNeutralForeground2: #C9CED6; --colorNeutralBackground5: #33363B; --colorNeutralBackground6: #3A3D43;
+    --colorBackgroundOverlay: rgba(0, 0, 0, 0.55);
+  }
+}
+
+@media (max-width: 720px) {
+  :root { --page-pad: 16px; --topbar-h: 52px; }
 }

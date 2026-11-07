@@ -90,7 +90,7 @@
     more: '<circle cx="5" cy="10" r=".9" fill="currentColor"/><circle cx="10" cy="10" r=".9" fill="currentColor"/><circle cx="15" cy="10" r=".9" fill="currentColor"/>',
     shield: '<path d="M10 2.8 16 5v4.6c0 3.7-2.5 6.4-6 7.6-3.5-1.2-6-3.9-6-7.6V5z"/><path d="M10 6.8v3.8M10 13v.2"/>',
     chart: '<path d="M3.5 3.5v13h13"/><path d="M7 13V9.5M10.5 13V6.5M14 13v-5"/>',
-    settings: '<circle cx="10" cy="10" r="2.4"/><path d="M10 2.8v2M10 15.2v2M2.8 10h2M15.2 10h2M4.9 4.9l1.4 1.4M13.7 13.7l1.4 1.4M4.9 15.1l1.4-1.4M13.7 6.3l1.4-1.4"/>',
+    settings: '<path d="M8.6 2.8h2.8l.4 2.1 1.5.9 2-.8 1.4 2.4-1.6 1.4v1.7l1.6 1.4-1.4 2.4-2-.8-1.5.9-.4 2.1H8.6l-.4-2.1-1.5-.9-2 .8-1.4-2.4 1.6-1.4V9.3L3.3 7.9l1.4-2.4 2 .8 1.5-.9z"/><circle cx="10" cy="10" r="2.3"/>',
     send: '<path d="M3.5 10 16.5 3.5 13 16.5l-3.2-5.3z"/><path d="m9.8 11.2 6.7-7.7"/>',
     question: '<circle cx="10" cy="10" r="7"/><path d="M8 8a2 2 0 1 1 2.8 1.8c-.5.3-.8.7-.8 1.3v.4M10 14v.2"/>',
     cloud: '<path d="M6 15.5h8.2a3.3 3.3 0 0 0 .4-6.6A4.8 4.8 0 0 0 5.4 8 3.8 3.8 0 0 0 6 15.5z"/>',
@@ -104,7 +104,15 @@
     menu: '<path d="M3.5 5.5h13M3.5 10h13M3.5 14.5h13"/>',
     people: '<circle cx="7.5" cy="7" r="2.7"/><path d="M2.5 16.5a5 5 0 0 1 10 0"/><path d="M12.8 4.6a2.7 2.7 0 0 1 0 5.1M14.5 12a5 5 0 0 1 3 4.5"/>',
     trend: '<path d="M3.5 14.5 8 10l3 3 5.5-6.5"/><path d="M12.5 6.5h4v4"/>',
-    bulb: '<path d="M7.5 14.5h5M8 17h4M10 3a5 5 0 0 0-3 9c.6.5 1 1.2 1 2h4c0-.8.4-1.5 1-2a5 5 0 0 0-3-9z"/>'
+    bulb: '<path d="M7.5 14.5h5M8 17h4M10 3a5 5 0 0 0-3 9c.6.5 1 1.2 1 2h4c0-.8.4-1.5 1-2a5 5 0 0 0-3-9z"/>',
+    compass: '<circle cx="10" cy="10" r="7"/><path d="m12.8 7.2-1.6 4-4 1.6 1.6-4z"/>',
+    inbox: '<path d="M3.5 11.5 5.5 4.5h9l2 7V15a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1z"/><path d="M3.5 11.5h4l1 2h3l1-2h4"/>',
+    panel: '<rect x="3.5" y="3.5" width="13" height="13" rx="2"/><path d="M12 3.5v13"/>',
+    lightning: '<path d="M11 2.5 4.5 11H10l-1 6.5 6.5-8.5H10z"/>',
+    moon: '<path d="M15.5 12.5A6.5 6.5 0 0 1 7.5 4.5a6.5 6.5 0 1 0 8 8z"/>',
+    sun: '<circle cx="10" cy="10" r="3"/><path d="M10 2.5v2M10 15.5v2M2.5 10h2M15.5 10h2M4.7 4.7l1.4 1.4M13.9 13.9l1.4 1.4M4.7 15.3l1.4-1.4M13.9 6.1l1.4-1.4"/>',
+    cap: '<path d="M2.5 8 10 4.5 17.5 8 10 11.5z"/><path d="M5.5 9.5v3.5c1.2 1.3 2.7 2 4.5 2s3.3-.7 4.5-2V9.5M17.5 8v4"/>',
+    undo: '<path d="M7 5.5 3.5 9 7 12.5"/><path d="M3.5 9H12a4.5 4.5 0 0 1 0 9H9"/>'
   };
 
   function icon(name, cls) {
@@ -235,9 +243,15 @@
       opts.mark != null ? h('span', { class: 'hbar__mark', title: opts.markTitle || null, style: { left: (Math.max(0, Math.min(1, opts.mark)) * 100).toFixed(1) + '%' } }) : null);
   };
 
-  /** Подсказка-пояснение «?» с текстом во всплывающем title и для экранных читалок. */
+  /** Подсказка-пояснение «?»: текст всплывает по наведению и по фокусу (клавиатура), читается экранными читалками. */
   ui.hint = function (text) {
-    return h('span', { class: 'hint', tabindex: '0', role: 'note', title: text, 'aria-label': text }, icon('question', 'icon--16'));
+    return h('span', { class: 'hint', tabindex: '0', role: 'note', 'data-tip': text, 'aria-label': text }, icon('question', 'icon--16'));
+  };
+
+  /** Термин с пояснением: пунктирное подчёркивание, подсказка по наведению и фокусу. key — 'term.<имя>' из i18n. */
+  ui.term = function (label, key) {
+    var text = CQA.i18n.tx(key, key);
+    return h('span', { class: 'term', tabindex: '0', 'data-tip': text, 'aria-label': label + '. ' + text }, label);
   };
 
   ui.spinner = function (label) { return h('span', { class: 'spinner', role: 'status', 'aria-label': label || t('state.loading') }); };
@@ -269,11 +283,15 @@
 
   ui.error = function (err, onRetry, title) {
     var detail = err && (err.message || String(err));
+    var notFound = err && err.status === 404;
+    var client = err && err.status >= 400 && err.status < 500;
     return h('div', { class: 'state state--error', role: 'alert' },
-      h('div', { class: 'state__icon' }, icon('error')),
-      h('div', { class: 'state__title' }, title || t('state.errorTitle')),
-      detail ? h('div', { class: 'state__detail' }, detail) : null,
-      onRetry ? h('button', { class: 'btn', type: 'button', onClick: onRetry }, icon('refresh'), t('action.retry')) : null);
+      h('div', { class: 'state__icon' }, icon(notFound ? 'search' : 'error')),
+      h('div', { class: 'state__title' }, title || (notFound ? t('state.notFoundTitle') : t('state.errorTitle'))),
+      notFound ? h('div', { class: 'state__text' }, t('state.notFoundText')) : null,
+      detail && !notFound ? h('div', { class: client ? 'state__text' : 'state__detail' }, detail) : null,
+      onRetry && !notFound ? h('button', { class: 'btn', type: 'button', onClick: onRetry }, icon('refresh'), t('action.retry')) : null,
+      notFound ? h('button', { class: 'btn', type: 'button', onClick: function () { CQA.palette.open(); } }, icon('search'), t('state.findCtrlK')) : null);
   };
 
   ui.empty = function (title, text, action, iconName) {
@@ -350,7 +368,9 @@
       h('div', { class: 'dialog__body' }, opts.body),
       footer ? h('div', { class: 'dialog__footer' }, footer) : null));
     dlg.addEventListener('cancel', function (e) { e.preventDefault(); close(); });
-    dlg.addEventListener('click', function (e) { if (e.target === dlg) close(); });
+    // щелчок мимо окна закрывает его, но не в первые полсекунды: двойной клик по кнопке не должен сразу закрыть подтверждение
+    var openedAt = Date.now();
+    dlg.addEventListener('click', function (e) { if (e.target === dlg && Date.now() - openedAt > 500) close(); });
     document.body.appendChild(dlg);
     if (dlg.showModal) dlg.showModal(); else dlg.setAttribute('open', '');
     var first = dlg.querySelector('.dialog__body input, .dialog__body select, .dialog__body textarea');
@@ -360,7 +380,7 @@
   ui._dlgSeq = 0;
 
   /** Подтверждение без window.confirm (в iframe Dynamics он может быть заблокирован). */
-  ui.confirm = function (title, text, okLabel, danger) {
+  ui.confirm = function (title, text, okLabel, danger, cancelLabel) {
     return new Promise(function (resolve) {
       var done = false;
       var m = ui.modal({
@@ -369,7 +389,7 @@
         onClose: function () { if (!done) resolve(false); },
         footer: function (close) {
           return [
-            h('button', { class: 'btn', type: 'button', onClick: function () { close(); } }, t('action.cancel')),
+            h('button', { class: 'btn', type: 'button', onClick: function () { close(); } }, cancelLabel || t('action.cancel')),
             h('button', { class: 'btn btn--primary' + (danger ? ' btn--danger-primary' : ''), type: 'button', onClick: function () { done = true; resolve(true); close(); } }, okLabel || t('action.ok'))
           ];
         }
@@ -378,6 +398,97 @@
       if (ok) ok.focus();
     });
   };
+
+  /** Выезжающая панель справа: ui.drawer({title, sub, body, wide, onClose}) → {el, close, body}.
+      Служебное (детали оценки, загрузка и прогоны) — здесь, а не на основном экране. */
+  ui.drawer = function (opts) {
+    var id = 'drw-' + (++ui._dlgSeq);
+    var dlg = h('dialog', { class: 'drawer' + (opts.wide ? ' drawer--wide' : ''), 'aria-labelledby': id });
+    var closed = false;
+    var close = function (result) {
+      if (closed) return;
+      closed = true;
+      if (dlg.open) dlg.close();
+      if (dlg.parentNode) dlg.parentNode.removeChild(dlg);
+      if (opts.onClose) opts.onClose(result);
+    };
+    var body = h('div', { class: 'drawer__body' }, opts.body);
+    dlg.appendChild(h('div', { class: 'drawer__surface' },
+      h('div', { class: 'drawer__header' },
+        h('div', { class: 'drawer__titles' },
+          h('h2', { class: 'drawer__title', id: id, tabindex: '-1' }, opts.title),
+          opts.sub ? h('div', { class: 'drawer__sub' }, opts.sub) : null),
+        h('button', { class: 'btn btn--subtle btn--icon', type: 'button', 'aria-label': t('action.close'), onClick: function () { close(); } }, icon('close'))),
+      body));
+    dlg.addEventListener('cancel', function (e) { e.preventDefault(); close(); });
+    var openedAt = Date.now();
+    dlg.addEventListener('click', function (e) { if (e.target === dlg && Date.now() - openedAt > 500) close(); });
+    dlg.classList.add('dialog');
+    document.body.appendChild(dlg);
+    if (dlg.showModal) dlg.showModal(); else dlg.setAttribute('open', '');
+    var head = dlg.querySelector('.drawer__title');
+    if (head) head.focus({ preventScroll: true });
+    return { el: dlg, close: close, body: body };
+  };
+
+  /** «Что дальше»: подсказка после действия — заголовок, пояснение и 1–2 кнопки.
+      ui.nextStep({title, text, icon, actions: [{label, href, onClick, primary, icon}], onClose}) */
+  ui.nextStep = function (opts) {
+    var el = h('div', { class: 'next', role: 'status' });
+    var close = function () { if (el.parentNode) el.parentNode.removeChild(el); if (opts.onClose) opts.onClose(); };
+    var actions = (opts.actions || []).filter(Boolean).map(function (a) {
+      var cls = 'btn btn--small' + (a.primary ? ' btn--primary' : '');
+      if (a.href) return h('a', { class: cls, href: a.href }, a.icon ? icon(a.icon) : null, a.label);
+      return h('button', { class: cls, type: 'button', onClick: function (e) { a.onClick(e, close); } }, a.icon ? icon(a.icon) : null, a.label);
+    });
+    el.appendChild(h('span', { class: 'next__icon', 'aria-hidden': 'true' }, icon(opts.icon || 'arrowRight')));
+    el.appendChild(h('div', { class: 'next__body' },
+      h('div', { class: 'next__title' }, opts.title),
+      opts.text ? h('div', { class: 'next__text' }, opts.text) : null,
+      actions.length ? h('div', { class: 'next__actions' }, actions) : null));
+    if (opts.closable !== false) el.appendChild(h('button', { class: 'btn btn--subtle btn--icon btn--small next__close', type: 'button', 'aria-label': t('action.close'), onClick: close }, icon('close')));
+    return el;
+  };
+
+  /** Шапка экрана: заголовок, одна строка «что здесь», одна главная кнопка (и при необходимости тихие). */
+  ui.pageHead = function (opts) {
+    return h('div', { class: 'page-head' },
+      h('div', { class: 'page-head__main' },
+        opts.back ? h('a', { class: 'back-link', href: opts.back.href }, icon('arrowLeft', 'icon--16'), opts.back.label) : null,
+        h('h1', null, opts.title),
+        opts.what ? h('p', { class: 'page-head__what' }, opts.what) : null),
+      opts.actions ? h('div', { class: 'page-head__actions' }, opts.actions) : null);
+  };
+
+  // ---------------------------------------------------------------- всплывающие подсказки [data-tip]
+  (function tips() {
+    if (typeof document === 'undefined' || !document.addEventListener) return;   // node-тесты мока
+    var tip = null, owner = null;
+    function show(el) {
+      var text = el.getAttribute('data-tip');
+      if (!text) return;
+      if (!tip) { tip = h('div', { class: 'tip', role: 'tooltip', 'aria-hidden': 'true' }); document.body.appendChild(tip); }
+      if (!tip.isConnected) document.body.appendChild(tip);
+      owner = el;
+      tip.textContent = text;
+      tip.classList.remove('is-on');
+      var r = el.getBoundingClientRect();
+      tip.style.left = '0px'; tip.style.top = '0px';
+      var tr = tip.getBoundingClientRect();
+      var left = Math.max(8, Math.min(window.innerWidth - tr.width - 8, r.left + r.width / 2 - tr.width / 2));
+      var top = r.bottom + 8;
+      if (top + tr.height > window.innerHeight - 8) top = Math.max(8, r.top - tr.height - 8);
+      tip.style.left = left + 'px';
+      tip.style.top = top + 'px';
+      requestAnimationFrame(function () { if (owner === el && tip) tip.classList.add('is-on'); });
+    }
+    function hide(el) { if (tip && (!el || el === owner)) { tip.classList.remove('is-on'); owner = null; } }
+    document.addEventListener('mouseover', function (e) { var el = e.target.closest && e.target.closest('[data-tip]'); if (el && el !== owner) show(el); else if (!el && owner) hide(); });
+    document.addEventListener('focusin', function (e) { var el = e.target.closest && e.target.closest('[data-tip]'); if (el) show(el); });
+    document.addEventListener('focusout', function (e) { var el = e.target.closest && e.target.closest('[data-tip]'); if (el) hide(el); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') hide(); });
+    document.addEventListener('scroll', function () { hide(); }, true);
+  })();
 
   // ---------------------------------------------------------------- прочее
   function debounce(fn, ms) {

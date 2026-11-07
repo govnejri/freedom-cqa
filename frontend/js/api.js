@@ -75,6 +75,22 @@
     }).catch(function () { return goMock('unreachable'); });
   }
 
+  /** Пока показаны демо-данные из-за недоступного API — раз в 15 с проверяем /health и предлагаем вернуться. */
+  var watchTimer = null;
+  function watchApi(onBack) {
+    clearInterval(watchTimer);
+    if (!state.base) return;
+    watchTimer = setInterval(function () {
+      withTimeout(rawRequest('GET', '/health'), 3500).then(function (h) {
+        if (h && typeof h === 'object') { clearInterval(watchTimer); onBack(); }
+      }, function () { /* всё ещё недоступен */ });
+    }, 15000);
+  }
+  function retryApi() {
+    if (!state.base) return Promise.reject(new ApiError(0, CQA.t('error.network')));
+    return withTimeout(rawRequest('GET', '/health'), 3500);
+  }
+
   function goMock(reason) {
     state.mode = 'mock';
     state.reason = reason;
@@ -103,7 +119,14 @@
     if (body && typeof body === 'object') {
       if (typeof body.detail === 'string') return body.detail;
       if (typeof body.message === 'string') return body.message;
-      if (Array.isArray(body.detail) || Array.isArray(body)) return CQA.t('error.validation');
+      var list = Array.isArray(body) ? body : Array.isArray(body.detail) ? body.detail : Array.isArray(body.errors) ? body.errors : null;
+      if (list) {
+        // 422: показываем, что именно не так («„от“ больше, чем „до“», «не длиннее 2000 символов»), а не общее «проверьте поля»
+        var msgs = list.map(function (e) { return e && (e.msg || e.message) ? String(e.msg || e.message) : null; }).filter(Boolean);
+        var uniq = msgs.filter(function (m, i) { return msgs.indexOf(m) === i; });
+        if (uniq.length) return uniq.slice(0, 3).join('; ');
+        return CQA.t('error.validation');
+      }
     }
     if (typeof body === 'string' && body && body.length < 300 && body.indexOf('<') < 0) return body;
     if (status === 404) return CQA.t('error.notFound');
@@ -168,6 +191,8 @@
     get reason() { return state.reason; },
     get health() { return state.health; },
     get launchData() { return state.data; },
+    watchApi: watchApi,
+    retryApi: retryApi,
     setBase: function (u) { CQA.store.set(LS_BASE, u ? normBase(u) : null); },
     checkBase: function (u) {
       var b = normBase(u);
@@ -177,7 +202,12 @@
     health_: function () { return request('GET', '/health'); },
     datasets: function () { return request('GET', '/datasets'); },
     fetchDataset: function (groupId) { return request('POST', '/datasets/fetch', { body: { group_id: groupId } }); },
-    uploadDataset: function (file) { var fd = new FormData(); fd.append('file', file); return request('POST', '/datasets/upload', { body: fd }); },
+    uploadDataset: function (file, groupId) {
+      var fd = new FormData();
+      fd.append('file', file);
+      if (groupId) fd.append('group_id', groupId);
+      return request('POST', '/datasets/upload', { body: fd });
+    },
 
     /** filters: group, lang, channel, score_min, score_max, gross, review, appeal, q, sort */
     conversations: function (filters) { return request('GET', '/conversations', { query: filters }); },

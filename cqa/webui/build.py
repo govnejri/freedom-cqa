@@ -1,7 +1,8 @@
 """Сборка фронтенда в один HTML-файл (веб-ресурс Dynamics 365).
 
 `frontend/index.html` → `build/cqa.html`:
-- `<link rel="stylesheet" href="…">` → `<style>` с содержимым файла;
+- `<link rel="stylesheet" href="…">` → `<style>` с содержимым файла; локальные `url(…)` в CSS (шрифты woff2,
+  картинки) → `data:`-URI в base64, поэтому шрифт Onest едет внутри одного HTML;
 - `<script src="…"></script>` → `<script>` с содержимым файла (классические скрипты, порядок сохраняется);
 - `frontend/mock/*.json` → `<script type="application/json" id="mock-…">`, чтобы сборка работала и без бэкенда.
 
@@ -9,6 +10,7 @@
 """
 from __future__ import annotations
 
+import base64
 import json
 import re
 from dataclasses import dataclass, field
@@ -24,6 +26,10 @@ _SCRIPT_RE = re.compile(r"<script\b([^>]*)\bsrc\s*=\s*[\"']([^\"']+)[\"']([^>]*)
 _HREF_RE = re.compile(r"\bhref\s*=\s*[\"']([^\"']+)[\"']", re.I)
 _REL_RE = re.compile(r"\brel\s*=\s*[\"']?stylesheet", re.I)
 _EXTERNAL = re.compile(r"^(?:[a-z]+:)?//", re.I)
+# url("…") | url('…') | url(…) — строки в кавычках целиком (внутри data:-URI бывают кавычки другого вида)
+_CSS_URL_RE = re.compile(r"""url\(\s*(?:"([^"]*)"|'([^']*)'|([^)\s'"]*))\s*\)""", re.I)
+_MIME = {".woff2": "font/woff2", ".woff": "font/woff", ".ttf": "font/ttf", ".svg": "image/svg+xml",
+         ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp"}
 
 
 class BuildError(RuntimeError):
@@ -48,6 +54,29 @@ def _read(src: Path, rel: str) -> str:
     if not p.is_file():
         raise BuildError(f"нет файла: {rel}")
     return p.read_text(encoding="utf-8")
+
+
+def _inline_css_urls(src: Path, rel: str, css: str) -> str:
+    """Локальные url(…) в CSS → data:-URI. Внешние адреса — ошибка сборки (Dynamics запрещает внешние ресурсы)."""
+    base = (src / rel).parent
+
+    def sub(m: re.Match) -> str:
+        target = next(g for g in m.groups() if g is not None).strip()
+        if not target or target.startswith(("data:", "#")):
+            return m.group(0)
+        if _EXTERNAL.match(target):
+            raise BuildError(f"внешний ресурс в CSS запрещён: {target} ({rel})")
+        p = (base / target.split("?", 1)[0].split("#", 1)[0]).resolve()
+        if src.resolve() not in p.parents:
+            raise BuildError(f"ресурс вне frontend/: {target} ({rel})")
+        if not p.is_file():
+            raise BuildError(f"нет файла: {target} ({rel})")
+        mime = _MIME.get(p.suffix.lower())
+        if mime is None:
+            raise BuildError(f"неизвестный тип ресурса: {target} ({rel})")
+        return f'url("data:{mime};base64,{base64.b64encode(p.read_bytes()).decode("ascii")}")'
+
+    return _CSS_URL_RE.sub(sub, css)
 
 
 def _safe_script(js: str) -> str:
@@ -86,7 +115,7 @@ def build(src: Path = FRONTEND, out: Path = OUT, *, with_mock: bool = True) -> B
             return tag
         rel = href.group(1)
         res.styles.append(rel)
-        return f"<style>/* {rel} */\n{_safe_style(_read(src, rel))}\n</style>"
+        return f"<style>/* {rel} */\n{_safe_style(_inline_css_urls(src, rel, _read(src, rel)))}\n</style>"
 
     def script(m: re.Match) -> str:
         rel = m.group(2)

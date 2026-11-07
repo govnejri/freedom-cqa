@@ -15,6 +15,8 @@
   };
   var KIND_ORDER = ['own', 'best_answer', 'checklist'];
   var EXAMPLES = ['tutor.ex1', 'tutor.ex2', 'tutor.ex3', 'tutor.ex4'];
+  /** Вопрос о себе: без выбранного оператора тьютору не на что опереться — платный вызов впустую. */
+  var PERSONAL = /(^|[^а-яё])(мне|меня|мой|моя|мои|моих|моё|мое|мною|я)([^а-яё]|$)/i;
 
   class CqaPageTutor extends HTMLElement {
     connectedCallback() {
@@ -30,6 +32,7 @@
       this.pane = h('div', { id: 'tutor-pane', role: 'tabpanel' });
       this.textContent = '';
       this.appendChild(h('div', { class: 'page tutor-page' },
+        CQA.subnav('learning', 'tutor'),
         h('div', { class: 'page-header' },
           h('div', null, h('h1', null, t('nav.tutor')), h('div', { class: 'page-header__sub' }, t('tutor.sub')))),
         h('div', { class: 'tabs tutor-tabs', role: 'tablist', 'aria-label': t('nav.tutor') }, this.tabChat, this.tabBest),
@@ -81,13 +84,19 @@
           h('span', { class: 'spacer' }), this.askBtn),
         h('div', { class: 'muted t-caption1 row' }, icon('info', 'icon--16'), t('tutor.note')));
       var opHint = h('div', { class: 'muted t-caption1 tutor-op-hint' });
-      var syncHint = function () { opHint.textContent = self.opSel.value ? t('tutor.opHintSet', { name: self.opSel.value }) : t('tutor.opHintNone'); };
+      this.opNeed = h('div', { 'aria-live': 'polite' });
+      form.appendChild(this.opNeed);
+      var syncHint = function () {
+        opHint.textContent = self.opSel.value ? t('tutor.opHintSet', { name: self.opSel.value }) : t('tutor.opHintNone');
+        if (self.opSel.value) { CQA.dom.clear(self.opNeed); self.opSel.removeAttribute('aria-invalid'); }
+      };
       this.opSel.addEventListener('change', syncHint);
       syncHint();
       form.insertBefore(opHint, this.input);
       form.addEventListener('submit', function (e) { e.preventDefault(); self.ask(); });
       this.input.addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); self.ask(); } });
       var hist = this.history();
+      if (this.query && this.query.q && !this.input.value) this.input.value = this.query.q;
       CQA.dom.replace(this.pane, h('div', { class: 'tutor-chat stack stack--l' }, form, this.thread));
       CQA.dom.clear(this.thread);
       if (!hist.length) this.thread.appendChild(h('p', { class: 'muted tutor-empty' }, t('tutor.empty')));
@@ -100,6 +109,14 @@
     ask() {
       var self = this, question = this.input.value.trim();
       if (!question || this.busy) { if (!question) this.input.focus(); return; }
+      if (!this.opSel.value && PERSONAL.test(question)) {
+        this.opSel.setAttribute('aria-invalid', 'true');
+        CQA.dom.replace(this.opNeed, ui.msgbar('warning', t('tutor.needOp'), t('tutor.needOpText')));
+        this.opSel.focus();
+        return;
+      }
+      CQA.dom.clear(this.opNeed);
+      this.opSel.removeAttribute('aria-invalid');
       var req = { question: question, operator: this.opSel.value || null };
       this.busy = true;
       this.askBtn.disabled = true;
@@ -155,8 +172,8 @@
         h('div', { class: 'tutor-q' }, icon('person', 'icon--16'), h('span', null, req.question),
           res.operator || req.operator ? ui.badge(res.operator || req.operator, 'neutral', 'headset', { title: t('tutor.operatorBadge') }) : null,
           CQA.recordedBadge()),
-        res.found ? null : ui.msgbar('warning', t('tutor.notFound'), t('tutor.notFoundText')),
-        h('div', { class: 'tutor-a' }, h('span', { class: 'tutor-a__icon', 'aria-hidden': 'true' }, icon('book')), CQA.md(res.answer, { cite: cite })),
+        res.found ? null : ui.msgbar('warning', t('tutor.notFound'), res.answer && res.answer.length < 400 ? res.answer : t('tutor.notFoundText')),
+        res.found || (res.answer && res.answer.length >= 400) ? h('div', { class: 'tutor-a' }, h('span', { class: 'tutor-a__icon', 'aria-hidden': 'true' }, icon('book')), CQA.md(res.answer, { cite: cite })) : null,
         res.found && res.sources && res.sources.length && res.sources[0].cited === false ? h('div', { class: 'muted t-caption1' }, t('tutor.uncited')) : null,
         srcBox.length ? h('div', { class: 'tsrc' }, srcBox) : null,
         h('div', { class: 'muted t-caption1 row' },

@@ -67,7 +67,7 @@
       this.current.appendChild(h('div', { class: 'quote quote--neutral t-caption1' },
         h('div', { class: 'row' }, h('span', { class: 'muted' }, t('appeal.currentVerdict')), CQA.verdict(v, c.type, d.tops && d.tops[c.criterion_id]),
           c.score && c.type !== 'flag' && v !== 'N/A' ? h('span', { class: 'num muted' }, fmt.score(c.score.points) + ' / ' + fmt.score(c.score.max_points)) : null),
-        c.explanation ? h('div', { class: 'subtle', style: { marginTop: '4px' } }, c.explanation) : null));
+        c.explanation ? h('div', { class: 'subtle', style: { marginTop: '4px' } }, CQA.cleanExplanation ? CQA.cleanExplanation(c.explanation, c.title) : c.explanation) : null));
       this.dispatchEvent(new CustomEvent('cqa-criterion-select', { bubbles: true, detail: { cid: c.criterion_id, keepForm: true } }));
     }
 

@@ -16,7 +16,10 @@
       this.textContent = '';
       this.appendChild(h('div', { class: 'page settings-page' },
         h('div', { class: 'page-header' },
-          h('div', null, h('h1', null, t('nav.settings')), h('div', { class: 'page-header__sub' }, t('set.subtitle')))),
+          h('div', null, h('h1', null, t('nav.settings')), h('div', { class: 'page-header__sub' }, t('set.subtitle'))),
+          h('div', { class: 'page-head__actions' },
+            h('button', { class: 'btn', type: 'button', onClick: function () { CQA.openPipeline(); } }, icon('download'), t('pipe.open')),
+            h('button', { class: 'btn btn--subtle', type: 'button', onClick: function () { CQA.guide.open(); } }, icon('compass'), t('guide.nav')))),
         this.root));
       this.load();
     }
@@ -86,7 +89,7 @@
         var overridden = Object.prototype.hasOwnProperty.call(s.overrides || {}, role);
         var sel = h('select', { class: 'select', id: 'set-role-' + role, disabled: self.busy || s.fake || null },
           (s.profiles || []).filter(function (p) { return p.name !== 'fake' || cur === 'fake'; }).map(function (p) {
-            var label = p.name + ' — ' + p.model + (p.local ? ' · ' + t('q.local') : '') + (p.name === def ? ' · ' + t('set.default') : '') + (p.available ? '' : ' · ' + t('set.unavailable'));
+            var label = p.name + ' — ' + p.model + (/-high$/.test(p.name) ? ' · ' + t('set.thinkHigh') : '') + (p.local ? ' · ' + t('q.local') : '') + (p.name === def ? ' · ' + t('set.default') : '') + (p.available ? '' : ' · ' + t('set.unavailable'));
             return h('option', { value: p.name, selected: p.name === cur, disabled: !p.available && p.name !== cur }, label);
           }));
         sel.addEventListener('change', function () {
@@ -116,7 +119,18 @@
         h('div', { class: 'set-roles' }, rows));
 
       this.statusBox = h('section', { class: 'card', 'aria-labelledby': 'set-status' });
-      CQA.dom.replace(this.root, switchCard, rolesCard, this.statusBox);
+      var cur = CQA.theme();
+      var themeSeg = h('div', { class: 'segmented', role: 'radiogroup', 'aria-label': t('theme.title') }, ['light', 'dark', 'auto'].map(function (th) {
+        return h('button', { type: 'button', role: 'radio', 'aria-checked': String(cur === th), onClick: function () {
+          CQA.setTheme(th);
+          Array.prototype.forEach.call(this.parentNode.children, function (b, i) { b.setAttribute('aria-checked', String(['light', 'dark', 'auto'][i] === th)); });
+        } }, icon(th === 'light' ? 'sun' : th === 'dark' ? 'moon' : 'panel'), t('theme.' + th));
+      }));
+      var themeCard = h('section', { class: 'card', 'aria-labelledby': 'set-theme' },
+        h('div', { class: 'card__header' },
+          h('div', null, h('h2', { class: 'card__title', id: 'set-theme' }, t('theme.title')), h('div', { class: 'muted t-caption1' }, t('theme.hint')))),
+        themeSeg);
+      CQA.dom.replace(this.root, switchCard, rolesCard, themeCard, this.statusBox);
       this.renderStatus();
     }
 

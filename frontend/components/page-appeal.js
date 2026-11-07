@@ -101,8 +101,8 @@
       var tone = U.verdictTone(o.verdict, o.type, top);
 
       var left = h('div', { class: 'stack stack--l' },
-        h('section', { class: 'card', 'aria-labelledby': 'ap-disputed' },
-          h('h2', { class: 'card__title', id: 'ap-disputed', style: { marginBottom: '12px' } }, t('appeal.disputed')),
+        h('section', { class: 'card appeal-crit', 'aria-labelledby': 'ap-disputed' },
+          h('h2', { class: 'card__title', id: 'ap-disputed', style: { marginBottom: '8px' } }, t('appeal.disputed')),
           crit),
         h('section', { class: 'card', 'aria-labelledby': 'ap-comment' },
           h('h2', { class: 'card__title', id: 'ap-comment', style: { marginBottom: '8px' } }, t('appeal.operatorComment')),
@@ -153,13 +153,13 @@
         ai && ai.model ? h('span', { class: 'muted t-caption1' }, ai.model) : null);
       var card = h('section', { class: 'card ai-card', 'aria-labelledby': 'ap-ai', 'aria-busy': 'false' }, head);
       var askBtn = function (label, primary) {
-        var b = h('button', { class: 'btn' + (primary ? ' btn--primary' : ' btn--small btn--subtle'), type: 'button' }, icon('sparkle'), label);
+        var b = h('button', { class: 'btn btn--small' + (primary ? '' : ''), type: 'button' }, icon('sparkle'), label);
         b.addEventListener('click', function () { self.askAi(b, card); });
         return b;
       };
       if (!ai) {
         card.appendChild(h('p', { class: 'subtle' }, t('appeal.aiAskText')));
-        card.appendChild(h('div', { class: 'row', style: { marginTop: '12px' } }, askBtn(t('appeal.aiAsk'), true)));
+        card.appendChild(h('div', { class: 'row', style: { marginTop: '12px' } }, askBtn(t('appeal.aiAsk'), false)));
         this.aiStatus = h('div', { 'aria-live': 'polite', style: { marginTop: '8px' } });
         card.appendChild(this.aiStatus);
         CQA.dom.replace(this.aiBox, card);
@@ -216,80 +216,75 @@
     }
 
     // ------------------------------------------------------------ форма решения
+    /** Решение — двумя кнопками с исходом: «Изменить на „Да“ · 46,92 → 61,54» и «Оставить „Нет“». Без выбора по умолчанию. */
     renderForm() {
       var self = this, a = this.appeal, o = a.original || {};
       var top = this.top();
       var current = o.final_verdict || o.verdict;
       var options = this.allowed().filter(function (v) { return v !== current; });
-      var rConfirm = h('input', { type: 'radio', name: 'action', value: 'confirm', checked: true });
-      var rChange = h('input', { type: 'radio', name: 'action', value: 'change', disabled: !options.length });
-      this.newVerdict = h('select', { class: 'select', id: 'ap-new', disabled: true },
-        options.map(function (v) { return h('option', { value: v }, U.verdictLabel(v, o.type, top)); }));
-      this.reason = h('textarea', { class: 'textarea', id: 'ap-reason', rows: '4', required: true, maxlength: '2000', placeholder: t('decision.reasonPlaceholder'), 'aria-describedby': 'ap-reason-err' });
+      this.choice = options[0] || null;
+      this.reason = h('textarea', { class: 'textarea', id: 'ap-reason', rows: '3', required: true, maxlength: '2000', placeholder: t('decision.reasonPlaceholder'), 'aria-describedby': 'ap-reason-err' });
       this.reasonErr = h('div', { class: 'field__error', id: 'ap-reason-err', 'aria-live': 'polite' });
-      this.precedent = h('input', { type: 'checkbox' });
-      this.preview = h('div', { class: 'decision-preview', 'aria-live': 'polite' });
+      this.precedent = h('input', { type: 'checkbox', checked: true });
       this.formErr = h('div', { 'aria-live': 'assertive' });
-      this.submitBtn = h('button', { class: 'btn btn--primary', type: 'submit' }, icon('check'), t('decision.submit'));
-      var verdictField = h('div', { class: 'field', hidden: true },
-        h('label', { class: 'field__label', for: 'ap-new' }, t('decision.newVerdict')), this.newVerdict,
-        h('div', { class: 'field__hint' }, t('decision.allowedHint', { list: this.allowed().map(function (v) { return U.verdictLabel(v, o.type, top); }).join(', ') })));
+      var cur = this.ev ? (this.ev.final_total != null ? this.ev.final_total : this.ev.total) : null;
 
-      var sync = function () {
-        var change = rChange.checked;
-        verdictField.hidden = !change;
-        self.newVerdict.disabled = !change;
-        CQA.dom.replace(self.submitBtn, icon('check'), change ? t('decision.submitChange') : t('decision.submitConfirm'));
-        self.updatePreview(change ? self.newVerdict.value : null);
-      };
-      rConfirm.addEventListener('change', sync);
-      rChange.addEventListener('change', sync);
-      this.newVerdict.addEventListener('change', sync);
+      this.changeBtn = h('button', { class: 'decide__btn decide__btn--change', type: 'button', disabled: !options.length, onClick: function () { self.submit(true, this); } });
+      this.keepBtn = h('button', { class: 'decide__btn', type: 'button', onClick: function () { self.submit(false, this); } },
+        h('b', null, icon('check'), t('decision.keep', { v: U.verdictLabel(current, o.type, top) })),
+        h('span', null, cur != null ? t('decision.keepNote', { s: fmt.score(cur) }) : t('decision.totalStays')));
+      var verdictPick = null;
+      if (options.length > 1) {
+        verdictPick = h('div', { class: 'field' },
+          h('span', { class: 'field__label' }, t('decision.newVerdict')),
+          h('div', { class: 'segmented', role: 'radiogroup', 'aria-label': t('decision.newVerdict') }, options.map(function (v) {
+            return h('button', { type: 'button', role: 'radio', 'aria-checked': String(v === self.choice), 'data-v': v, onClick: function () {
+              self.choice = v;
+              Array.prototype.forEach.call(this.parentNode.children, function (b) { b.setAttribute('aria-checked', String(b.getAttribute('data-v') === v)); });
+              self.renderChange();
+            } }, U.verdictLabel(v, o.type, top));
+          })));
+      }
+      this.renderChange();
 
-      var form = h('form', { class: 'card stack stack--l', novalidate: true, 'aria-labelledby': 'ap-decision' },
-        h('h2', { class: 'card__title', id: 'ap-decision' }, t('decision.title')),
-        h('fieldset', { class: 'radio-cards' },
-          h('legend', { class: 'sr-only' }, t('decision.title')),
-          h('label', { class: 'radio-card' }, rConfirm,
-            h('span', null, h('span', { class: 'radio-card__title' }, t('decision.confirm')), h('span', { class: 'radio-card__text' }, t('decision.confirmText', { v: U.verdictLabel(current, o.type, top) })))),
-          h('label', { class: 'radio-card' + (options.length ? '' : ' is-disabled') }, rChange,
-            h('span', null, h('span', { class: 'radio-card__title' }, t('decision.change')), h('span', { class: 'radio-card__text' }, t('decision.changeText'))))),
-        verdictField,
+      var form = h('form', { class: 'card decide', novalidate: true, 'aria-labelledby': 'ap-decision' },
+        h('div', null,
+          h('h2', { class: 'card__title', id: 'ap-decision' }, t('decision.title')),
+          h('p', { class: 'muted', style: { marginTop: '4px' } }, t('decision.intro', { v: U.verdictLabel(current, o.type, top) }))),
         h('div', { class: 'field' },
           h('label', { class: 'field__label', for: 'ap-reason' }, t('decision.reason'), h('span', { class: 'req', 'aria-hidden': 'true' }, '*')),
           this.reason, this.reasonErr),
         h('div', { class: 'field' },
-          h('label', { class: 'check check--small' }, this.precedent, t('decision.precedent')),
-          h('div', { class: 'field__hint' }, t('decision.precedentHint'))),
-        this.preview,
-        this.formErr,
-        h('div', { class: 'row' }, this.submitBtn));
-      form.addEventListener('submit', function (e) { e.preventDefault(); self.submit(rChange.checked); });
+          h('label', { class: 'check' }, this.precedent, h('span', null, t('decision.precedentLead'), ' ', ui.term(t('decision.precedentTerm'), 'term.precedent'))),
+          h('div', { class: 'field__hint' }, t('decision.precedentHint2'))),
+        verdictPick,
+        h('div', { class: 'decide__outcomes' }, options.length ? this.changeBtn : null, this.keepBtn),
+        this.formErr);
+      form.addEventListener('submit', function (e) { e.preventDefault(); });
       CQA.dom.replace(this.decisionBox, form);
-      sync();
     }
 
-    /** Предпросмотр нового итога той же формулой §3 (окончательный пересчёт делает бэкенд). */
-    updatePreview(newVerdict) {
-      var box = this.preview;
-      box.textContent = '';
-      var ev = this.ev, cfg = this.config;
-      if (!ev || !cfg) return;
-      var cur = ev.final_total != null ? ev.final_total : ev.total;
-      if (!newVerdict) {
-        box.appendChild(h('div', { class: 'row' }, h('span', { class: 'muted' }, t('decision.totalStays')), CQA.score(cur, null, { max: true })));
-        return;
+    /** Подпись кнопки «Изменить на …» с предпросмотром нового итога той же формулой §3 (окончательный пересчёт — на бэкенде). */
+    renderChange() {
+      if (!this.changeBtn) return;
+      var a = this.appeal, o = a.original || {}, top = this.top();
+      var ev = this.ev, cfg = this.config, note = t('decision.changeText');
+      if (this.choice && ev && cfg) {
+        var cur = ev.final_total != null ? ev.final_total : ev.total;
+        var verdicts = {}, cats = {};
+        ev.criteria.forEach(function (c) { verdicts[c.criterion_id] = c.final_verdict || c.verdict; cats[c.criterion_id] = c.category; });
+        verdicts[a.criterion_id] = this.choice;
+        try {
+          var res = CQA.scoring.score(cfg, verdicts, cats);
+          if (res.total != null && cur != null) note = t('decision.changeNote', { a: fmt.score(cur), b: fmt.score(res.total) });
+        } catch (e) { /* конфиг не совпал — без предпросмотра */ }
       }
-      var verdicts = {}, cats = {};
-      ev.criteria.forEach(function (c) { verdicts[c.criterion_id] = c.final_verdict || c.verdict; cats[c.criterion_id] = c.category; });
-      verdicts[this.appeal.criterion_id] = newVerdict;
-      try {
-        var res = CQA.scoring.score(cfg, verdicts, cats);
-        box.appendChild(h('div', { class: 'row' }, h('span', { class: 'muted' }, t('decision.totalWillBe')), CQA.score(res.total, cur, { max: true })));
-      } catch (e) { /* конфиг не совпал — без предпросмотра */ }
+      CQA.dom.replace(this.changeBtn,
+        h('b', null, icon('edit'), this.choice ? t('decision.changeTo2', { v: U.verdictLabel(this.choice, o.type, top) }) : t('decision.change')),
+        h('span', null, note));
     }
 
-    submit(change) {
+    submit(change, btn) {
       var self = this;
       this.reasonErr.textContent = '';
       this.reason.removeAttribute('aria-invalid');
@@ -300,20 +295,22 @@
         this.reason.focus();
         return;
       }
-      var dto = { action: change ? 'change' : 'confirm', new_verdict: change ? this.newVerdict.value : null, reason: this.reason.value.trim(), make_precedent: this.precedent.checked };
-      this.submitBtn.disabled = true;
-      CQA.dom.replace(this.submitBtn, ui.spinner(), t('decision.saving'));
+      var dto = { action: change ? 'change' : 'confirm', new_verdict: change ? this.choice : null, reason: this.reason.value.trim(), make_precedent: this.precedent.checked };
+      var label = btn.innerHTML;
+      this.changeBtn.disabled = true; this.keepBtn.disabled = true;
+      CQA.dom.replace(btn, h('b', null, ui.spinner(), t('decision.saving')));
       CQA.api.decide(this.appeal.id, dto).then(function (a) {
         self.appeal = a;
+        self.justDecided = true;
         ui.toast(t('decision.saved'), { tone: 'success' });
         document.dispatchEvent(new CustomEvent('cqa-appeals-changed'));
         self.render();
       }, function (err) {
-        self.submitBtn.disabled = false;
-        CQA.dom.replace(self.submitBtn, icon('check'), t('decision.submit'));
+        self.changeBtn.disabled = false; self.keepBtn.disabled = false;
+        btn.innerHTML = label;
         var ve = CQA.api.validationErrors(err);
         ve.forEach(function (x) { if (/reason/.test(x.loc)) { self.reason.setAttribute('aria-invalid', 'true'); CQA.dom.replace(self.reasonErr, icon('error'), x.msg); } });
-        self.formErr.appendChild(ui.msgbar('danger', t('decision.failed'), err.message));
+        self.formErr.appendChild(ui.msgbar('danger', t('decision.failed'), U.errText(err)));
       });
     }
 
@@ -339,9 +336,31 @@
           h('dt', null, t('decision.total')),
           h('dd', null, next != null ? CQA.score(next, prev, { max: true }) : '—')),
         h('div', { class: 'card__footer' },
-          h('a', { class: d.make_precedent ? 'btn' : 'btn btn--primary', href: '#/c/' + encodeURIComponent(a.uid) + '?crit=' + encodeURIComponent(a.criterion_id) }, icon('chat'), t('decision.openCard')),
-          h('a', { class: 'btn', href: '#/appeals' }, t('decision.toList')))));
+          h('a', { class: 'btn btn--small', href: '#/c/' + encodeURIComponent(a.uid) + '?crit=' + encodeURIComponent(a.criterion_id) }, icon('chat'), t('decision.openCard')))));
       if (d.make_precedent) this.renderPrecedent();
+      this.renderNext();
+    }
+
+    /** «Что дальше» после решения: прецедент → в чек-лист; иначе — следующая апелляция. */
+    renderNext() {
+      var self = this, a = this.appeal, d = a.decision || {};
+      if (!this.nextBox) { this.nextBox = h('div'); this.right.insertBefore(this.nextBox, this.decisionBox); }
+      CQA.api.appeals('open').catch(function () { return []; }).then(function (list) {
+        var next = (list || []).filter(function (x) { return x.id !== a.id; })[0];
+        var actions = [];
+        if (d.make_precedent) actions.push({ label: t('next.precToVersion'), primary: true, icon: 'checklist', onClick: function () {
+          if (self.precBox) self.precBox.scrollIntoView({ block: 'start', behavior: 'smooth' });
+          var b = self.precBox && self.precBox.querySelector('.btn--primary'); if (b) b.focus({ preventScroll: true });
+        } });
+        if (next) actions.push({ label: t('next.nextAppeal', { id: next.id }), href: '#/appeals/' + next.id, primary: !d.make_precedent, icon: 'arrowRight' });
+        else actions.push({ label: t('decision.toList'), href: '#/appeals', icon: 'scale' });
+        CQA.dom.replace(self.nextBox, ui.nextStep({
+          icon: d.make_precedent ? 'sparkle' : 'check',
+          title: d.make_precedent ? t('next.precTitle') : t('next.decidedTitle'),
+          text: d.make_precedent ? t('next.precText') : next ? t('next.decidedText', { n: list.length - (list.some(function (x) { return x.id === a.id; }) ? 1 : 0) }) : t('next.noMore'),
+          actions: actions
+        }));
+      });
     }
 
     /** Решение стало прецедентом → путь «версия чек-листа с примером → проверка на похожих → было/стало». */

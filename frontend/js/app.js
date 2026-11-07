@@ -4,9 +4,20 @@
 
   CQA.config = CQA.config || { checklistId: 'freedom-cqa' };
 
+  /** Тема: light | dark | auto (как в системе). Светлая — по умолчанию. */
+  CQA.setTheme = function (theme) {
+    if (['light', 'dark', 'auto'].indexOf(theme) < 0) theme = 'light';
+    document.documentElement.setAttribute('data-theme', theme);
+    var meta = document.querySelector('meta[name="color-scheme"]');
+    if (meta) meta.setAttribute('content', theme === 'light' ? 'light' : theme === 'dark' ? 'dark' : 'light dark');
+    CQA.store.set('cqa.theme', theme === 'light' ? null : theme);
+  };
+  CQA.theme = function () { return document.documentElement.getAttribute('data-theme') || 'light'; };
+
   CQA.boot = function () {
     CQA.i18n.init();
     document.documentElement.lang = CQA.i18n.lang();
+    CQA.setTheme(CQA.store.get('cqa.theme', 'light'));
     var root = document.getElementById('app-root') || document.body;
     var shell = document.createElement('cqa-app');
     root.textContent = '';
@@ -17,6 +28,7 @@
       if (d.page && !location.hash) location.hash = d.page.charAt(0) === '#' ? d.page : '#' + d.page;
       shell.ready();
       CQA.router.start(shell.outlet);
+      CQA.guide.maybeFirst();
     }).catch(function (err) {
       console.error('[CQA] boot', err);
       shell.outlet.textContent = '';

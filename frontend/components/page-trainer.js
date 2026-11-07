@@ -68,6 +68,7 @@
       this.mineToggle = h('div');
       this.textContent = '';
       this.appendChild(h('div', { class: 'page tr-page' },
+        CQA.subnav('learning', 'trainer'),
         h('div', { class: 'page-header' },
           h('div', null, h('h1', null, t('nav.trainer')), h('div', { class: 'page-header__sub' }, t('trainer.sub'))),
           h('div', { class: 'row' },
@@ -112,7 +113,7 @@
       var list = this.sessions.filter(function (s) { return !me || !self.mine || same(s.operator, me); });
       if (!list.length) {
         CQA.dom.replace(this.sessBox, ui.empty(t('trainer.noSessions'), t('trainer.noSessionsText'),
-          h('button', { class: 'btn btn--primary', type: 'button', onClick: pickDialog }, icon('target'), t('trainer.new')), 'target'));
+          h('button', { class: 'btn', type: 'button', onClick: pickDialog }, icon('target'), t('trainer.new')), 'target'));
         return;
       }
       CQA.dom.replace(this.sessBox, CQA.sessionRows(list, { showOperator: !self.mine || !me }));
@@ -545,7 +546,31 @@
           }));
       }));
       var hidden = p.hidden_question || (p.reveal_if_asked && p.reveal_if_asked.length);
+      // «что дальше»: ещё раз, следующая зона роста оператора, вопрос тьютору
+      var nextBox = h('div');
+      var again = { label: t('trainer.again'), href: CQA.trainHref(s.base_uid, { focus: s.criteria_focus, operator: s.operator, lesson: s.lesson_id }), icon: 'refresh', primary: true };
+      var worstLeft = (c.criteria || []).filter(function (x) { return x.change === 'worse' || x.ok_after === false; })[0];
+      var tutorQ = worstLeft ? t('trainer.tutorQ', { id: worstLeft.criterion_id }) : null;
+      var renderNext = function (zone) {
+        var acts = [again];
+        if (zone) acts.push({ label: t('trainer.nextZone', { c: zone.criterion_id + ' ' + CQA.evalUtil.shortTitle(zone.title) }), icon: 'arrowRight',
+          href: CQA.trainHref(zone.examples[0].uid, { focus: [zone.criterion_id], operator: s.operator }) });
+        if (tutorQ) acts.push({ label: t('trainer.askTutor'), icon: 'book', href: '#/tutor?q=' + encodeURIComponent(tutorQ) });
+        CQA.dom.replace(nextBox, ui.nextStep({ icon: 'target', closable: false,
+          title: c.delta_total > 0 ? t('trainer.nextTitleUp') : t('trainer.nextTitle'),
+          text: zone ? t('trainer.nextText', { c: zone.criterion_id + ' ' + zone.title }) : t('trainer.nextTextNoZone'),
+          actions: acts }));
+      };
+      renderNext(null);
+      if (s.operator) {
+        CQA.api.operator(s.operator).then(function (op) {
+          var focus = s.criteria_focus || [];
+          var zone = (op.growth_zones || []).filter(function (z) { return focus.indexOf(z.criterion_id) < 0 && z.examples && z.examples.length; })[0];
+          if (zone) renderNext(zone);
+        }, function () { /* без профиля — без следующей зоны */ });
+      }
       return h('div', { class: 'stack stack--l tr-result' },
+        nextBox,
         h('section', { class: 'card tr-score', 'aria-labelledby': 'tr-score-title' },
           h('h2', { class: 'sr-only', id: 'tr-score-title' }, t('trainer.resultTitle')),
           h('div', { class: 'tr-score__pair' },
@@ -559,7 +584,7 @@
             ui.badge(t('trainer.nSame', { n: count('same') }), 'neutral'),
             ui.badge(t('trainer.nWorse', { n: count('worse') }), count('worse') ? 'danger' : 'neutral', 'arrowDown'),
             c.after && c.after.gross ? ui.badge(t('badge.gross'), 'danger-filled', 'warning') : null),
-          c.summary ? h('p', { class: 'subtle' }, c.summary) : null,
+          c.summary ? h('p', { class: 'subtle' }, String(c.summary).replace(/(\d)\.(\d)/g, '$1,$2')) : null,
           h('div', { class: 'row t-caption1' },
             s.uid ? h('a', { class: 'btn btn--small', href: CQA.convHref(s.uid) }, icon('checklist'), t('trainer.openEval')) : null,
             s.result_evaluation_id ? h('a', { class: 'btn btn--small btn--subtle', href: '#/log/' + s.result_evaluation_id }, icon('code'), t('eval.log')) : null,

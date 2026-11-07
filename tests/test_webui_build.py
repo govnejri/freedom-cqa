@@ -15,9 +15,10 @@ COMPONENT_RE = re.compile(r"customElements\.define\(\s*['\"]([a-z0-9-]+)['\"]")
 
 
 @pytest.fixture(scope="module")
-def built() -> tuple[Path, str]:
-    """Собирает build/cqa.html (артефакт в .gitignore) — то же, что `cqa build-ui`."""
-    res = build(out=OUT)
+def built(tmp_path_factory) -> tuple[Path, str]:
+    """Собирает интерфейс так же, как `cqa build-ui`, но во временный файл: тесты не перезаписывают build/cqa.html,
+    который в это время может раздавать запущенный сервер."""
+    res = build(out=tmp_path_factory.mktemp("ui") / OUT.name)
     return res.path, res.path.read_text(encoding="utf-8")
 
 
@@ -68,6 +69,28 @@ def test_mock_embedded_as_json(built):
         assert json.loads(m.group(1)) == json.loads(p.read_text(encoding="utf-8"))
     # мок-данные стоят до кода приложения
     assert html.index('id="mock-') < html.index("/* js/app.js */")
+
+
+def test_fonts_embedded(built):
+    """Onest встроен в HTML как data:-URI (Dynamics не пускает внешние шрифты); кириллица с казахскими буквами — тоже."""
+    _, html = built
+    fonts = sorted(p.name for p in (FRONTEND / "fonts").glob("*.woff2"))
+    assert fonts, "нет woff2 во frontend/fonts"
+    assert html.count("data:font/woff2;base64,") == len(fonts)
+    assert "onest-cyrillic-ext" not in html          # путь заменён данными, а не оставлен ссылкой
+    # в CSS не осталось url() на файлы — только data:
+    css = "\n".join(re.findall(r"<style>(.*?)</style>", html, re.S))
+    for m in re.finditer(r"url\(\s*[\"']?([^\"')]+)", css):
+        assert m.group(1).startswith(("data:", "#")), m.group(1)[:80]
+
+
+def test_build_rejects_external_css_url(tmp_path):
+    src = tmp_path / "fe"
+    shutil.copytree(FRONTEND, src)
+    css = src / "styles" / "fonts.css"
+    css.write_text(css.read_text(encoding="utf-8") + '\n@font-face { font-family: X; src: url("https://fonts.example.com/x.woff2"); }\n', encoding="utf-8")
+    with pytest.raises(BuildError):
+        build(src=src, out=tmp_path / "out.html")
 
 
 def test_build_rejects_external(tmp_path):

@@ -38,20 +38,26 @@
       var self = this;
       this.sort = '-n_dialogs';
       this.filter = '';
-      this.sub = h('div', { class: 'page-header__sub' });
+      this.sub = h('p', { class: 'page-head__what' }, t('op.what'));
       this.note = h('div');
       this.unBox = h('div');
       this.search = h('input', { class: 'input', type: 'search', placeholder: t('op.search'), 'aria-label': t('op.search') });
       this.search.addEventListener('input', U.debounce(function () { self.filter = self.search.value.trim(); self.renderTable(); }, 150));
       this.box = h('div', { class: 'list-box' }, ui.skeleton('table', 8));
+      this.below = !!(this.query && this.query.below);
+      this.belowBtn = h('button', { class: 'toggle', type: 'button', 'aria-pressed': String(this.below), onClick: function () {
+        self.below = !self.below; self.belowBtn.setAttribute('aria-pressed', String(self.below));
+        CQA.router.setQuery(self.below ? { below: 1 } : {}); self.renderTable();
+      } }, icon('trend'), t('op.belowToggle'));
       this.textContent = '';
       this.appendChild(h('div', { class: 'page op-page' },
-        h('div', { class: 'page-header' }, h('div', null, h('h1', null, t('op.listTitle')), this.sub)),
+        CQA.subnav('team', 'operators'),
+        h('div', { class: 'page-head' }, h('div', null, h('h1', null, t('nav.team')), this.sub)),
         h('div', { class: 'stack stack--l' },
           this.note,
-          this.unBox,
-          h('div', { class: 'filters card' }, h('div', { class: 'input-with-icon filters__search' }, icon('search'), this.search)),
-          this.box)));
+          h('div', { class: 'filters card' }, h('div', { class: 'input-with-icon filters__search' }, icon('search'), this.search), this.belowBtn),
+          this.box,
+          this.unBox)));
       this.onMe = function () { self.renderNote(); self.renderTable(); };
       document.addEventListener('cqa-me-changed', this.onMe);
       this.load();
@@ -66,7 +72,7 @@
         self.data = res[0];
         self.convs = {};
         (res[1] || []).forEach(function (s) { self.convs[s.uid] = s; });
-        self.sub.textContent = t('op.listSub', { n: self.data.n_operators, d: self.data.n_dialogs, a: fmt.score(self.data.avg_total) });
+        self.sub.textContent = t('op.whatN', { n: self.data.n_operators, a: fmt.score(self.data.avg_total) });
         self.renderNote();
         self.renderUnassigned();
         self.renderTable();
@@ -76,16 +82,7 @@
     }
 
     renderNote() {
-      var me = CQA.me.get();
-      var role = document.documentElement.getAttribute('data-role');
-      if (me) {
-        CQA.dom.replace(this.note, ui.msgbar('success', t('op.meIs', { name: me }), t('op.meText'),
-          h('div', { class: 'row' },
-            h('a', { class: 'btn btn--small btn--primary', href: CQA.operatorHref(me) }, icon('person'), t('op.openMine')),
-            h('button', { class: 'btn btn--small', type: 'button', onClick: function () { CQA.me.set(null); } }, t('op.meReset')))));
-      } else if (role === 'operator') {
-        CQA.dom.replace(this.note, ui.msgbar('info', t('op.pickMeTitle'), t('op.pickMeText')));
-      } else CQA.dom.clear(this.note);
+      CQA.dom.clear(this.note);
     }
 
     renderUnassigned() {
@@ -128,20 +125,24 @@
       var more = rows.length > LIMIT && !this.unAll ? h('button', { class: 'btn btn--small btn--subtle', type: 'button', onClick: function () {
         self.unAll = true; rows.slice(LIMIT).forEach(function (r) { ul.appendChild(r); }); more.remove();
       } }, icon('chevronDown', 'icon--16'), t('op.unMore', { n: rows.length - LIMIT })) : null;
-      CQA.dom.replace(this.unBox, h('section', { class: 'card op-un', 'aria-labelledby': 'op-un-title' },
-        h('div', { class: 'card__header' },
-          h('div', null,
-            h('h2', { class: 'card__title row', id: 'op-un-title' }, icon('phone'), t('op.unTitle', { n: list.length })),
-            h('div', { class: 'muted t-caption1' }, t('op.unText')))),
-        dl, ul, more));
+      var det = h('details', { class: 'panel dash-more op-un', open: this.unOpen || null },
+        h('summary', null, icon('chevronRight'), h('span', null, t('op.unTitle', { n: list.length })), h('span', { class: 'panel__meta' }, t('op.unText'))),
+        h('div', { class: 'dash-more__body' }, dl, ul, more));
+      det.addEventListener('toggle', function () { self.unOpen = det.open; });
+      CQA.dom.replace(this.unBox, det);
     }
 
     renderTable() {
       if (!this.data) return;
       var self = this, me = CQA.me.get();
       var q = this.filter.toLocaleLowerCase('ru');
-      var rows = this.data.operators.filter(function (o) { return !q || o.name.toLocaleLowerCase('ru').indexOf(q) >= 0; });
-      var key = this.sort.replace(/^-/, ''), dir = this.sort.charAt(0) === '-' ? -1 : 1;
+      var dept = this.data.avg_total;
+      var rows = this.data.operators.filter(function (o) {
+        if (q && o.name.toLocaleLowerCase('ru').indexOf(q) < 0) return false;
+        if (self.below && !(dept != null && o.avg_total != null && o.avg_total <= dept - 20)) return false;
+        return true;
+      });
+      var key = this.below && this.sort === '-n_dialogs' ? 'avg_total' : this.sort.replace(/^-/, ''), dir = this.below && this.sort === '-n_dialogs' ? 1 : this.sort.charAt(0) === '-' ? -1 : 1;
       rows.sort(function (a, b) {
         var x = a[key], y = b[key];
         if (x == null && y == null) return 0;
@@ -231,24 +232,71 @@
     }
 
     render() {
-      var p = this.p;
+      var p = this.p, self = this;
       document.title = p.name + ' · CQA';
       this.header = h('div');
       this.summaryBox = h('div');
+      this.appealsBox = h('div');
+      var more = function (id, title, meta, content) {
+        if (!content) return null;
+        return h('details', { class: 'panel dash-more', id: id },
+          h('summary', null, icon('chevronRight'), h('span', null, title), meta ? h('span', { class: 'panel__meta' }, meta) : null),
+          h('div', { class: 'dash-more__body' }, content));
+      };
       CQA.dom.replace(this.root,
-        h('a', { class: 'back-link', href: '#/operators' }, icon('arrowLeft', 'icon--16'), t('op.all')),
+        this.meView ? null : h('a', { class: 'back-link', href: '#/operators' }, icon('arrowLeft', 'icon--16'), t('nav.team')),
         this.header,
         h('div', { class: 'stack stack--xl' },
-          h('div', { class: 'op-top' }, this.vsCard(), this.kpis()),
+          this.metricsStrip(),
           this.summaryBox,
           this.zonesSection(),
-          this.strengthsSection(),
-          this.criteriaSection(),
-          this.grossSection(),
-          this.trainingSection(),
-          this.dialogsSection()));
+          this.appealsBox,
+          h('div', { class: 'stack stack--l' },
+            more('op-more-strong', t('op.strongTitle'), t('op.strongSub'), this.strengthsBody()),
+            more('op-more-crit', t('op.critTitle'), t('op.critSub'), this.criteriaSection()),
+            more('op-more-gross', t('op.grossTitle', { n: p.gross_errors.length }), null, this.grossBody()),
+            more('op-more-train', t('op.trainTitle'), t('op.trainSub'), this.trainingSection()),
+            more('op-more-dialogs', t('op.dialogsTitle', { n: p.dialogs.length }), t('op.dialogsSort'), this.dialogsSection()))));
       this.renderHeader();
       this.renderSummary(null);
+      this.loadAppeals();
+    }
+
+    /** Полоса метрик профиля: балл против отдела, диалоги, грубые, апелляции. */
+    metricsStrip() {
+      var p = this.p, dep = p.department;
+      var d = p.avg_total != null && dep.avg_total != null ? p.avg_total - dep.avg_total : null;
+      return h('div', { class: 'metrics' },
+        h('div', { class: 'metric' },
+          h('span', { class: 'metric__value' }, CQA.score(p.avg_total), ' ', d != null ? h('small', null, CQA.delta(d)) : null),
+          h('span', { class: 'metric__label' }, t('op.mAvg', { d: fmt.score(dep.avg_total) }))),
+        h('div', { class: 'metric' }, h('span', { class: 'metric__value' }, String(p.n_dialogs)), h('span', { class: 'metric__label' }, t('op.mDialogs', { n: p.n_dialogs }))),
+        h('div', { class: 'metric' + (p.gross_count ? ' metric--gross' : '') }, h('span', { class: 'metric__value' }, String(p.gross_count)), h('span', { class: 'metric__label' }, t('dash.mGross', { n: p.gross_count }))),
+        h('div', { class: 'metric' }, h('span', { class: 'metric__value' }, String(p.n_appeals)),
+          h('span', { class: 'metric__label' }, p.n_open_appeals ? t('op.mAppealsOpen', { n: p.n_open_appeals }) : t('op.mAppeals', { n: p.n_appeals }))));
+    }
+
+    /** Апелляции по диалогам оператора: что оспорено и чем закончилось. */
+    loadAppeals() {
+      var self = this, uids = {};
+      this.p.dialogs.forEach(function (d) { uids[d.uid] = d; });
+      CQA.api.appeals('all').then(function (list) {
+        var mine = (list || []).filter(function (a) { return uids[a.uid]; });
+        if (!mine.length) { CQA.dom.clear(self.appealsBox); return; }
+        CQA.dom.replace(self.appealsBox, h('section', { class: 'panel panel--flush', 'aria-labelledby': 'op-appeals' },
+          h('div', { class: 'panel__head' }, h('h2', { class: 'panel__title', id: 'op-appeals' }, icon('scale'), self.meView ? t('op.myAppeals') : t('op.appealsTitle')),
+            h('span', { class: 'panel__meta' }, t('op.appealsSub', { n: mine.length }))),
+          h('ul', { class: 'op-appeals' }, mine.map(function (a) {
+            var dec = a.decision;
+            return h('li', null, h('a', { class: 'op-appeal', href: CQA.convHref(a.uid, { crit: a.criterion_id }) },
+              h('span', { class: 'op-appeal__main' },
+                h('b', null, fmt.externalId(a.uid) + ' · ' + a.criterion_id + ' ' + a.criterion_title),
+                h('span', { class: 'muted t-caption1' }, '«' + a.comment + '»')),
+              a.status === 'decided'
+                ? ui.badge(dec && dec.action === 'change' ? t('op.appealChanged') : t('op.appealConfirmed'), dec && dec.action === 'change' ? 'success' : 'neutral', dec && dec.action === 'change' ? 'checkCircle' : null)
+                : ui.badge(t('crit.appealOpen'), 'warning', 'history')));
+          }))));
+      }, function () { CQA.dom.clear(self.appealsBox); });
     }
 
     renderHeader() {
@@ -256,18 +304,18 @@
       var langs = {}, chans = {};
       p.dialogs.forEach(function (d) { langs[d.language] = 1; chans[U.channelLabel(d.channel)] = 1; });
       var worst = p.growth_zones[0] && p.growth_zones[0].examples[0];
-      CQA.dom.replace(this.header, h('div', { class: 'page-header' },
+      CQA.dom.replace(this.header, h('div', { class: 'page-head' },
         h('div', null,
-          h('div', { class: 'row' }, h('h1', null, p.name), isMe ? ui.badge(t('op.you'), 'brand', 'person') : null),
-          h('div', { class: 'page-header__sub' },
-            [t('op.dialogsN', { n: p.n_dialogs }), Object.keys(langs).join(', '), Object.keys(chans).join(', ')].join(' · '),
-            p.manual ? ' · ' + t('op.manualN', { n: p.manual }) : '')),
-        h('div', { class: 'row' },
-          isMe ? null : h('button', { class: 'btn', type: 'button', title: t('op.itsMeTitle'), onClick: function () {
-            CQA.me.set(p.name); ui.toast(t('op.meSet', { name: p.name }), { tone: 'success' });
-          } }, icon('person'), t('op.itsMe')),
-          worst ? h('a', { class: 'btn', href: CQA.trainHref(worst.uid, { focus: [p.growth_zones[0].criterion_id], operator: p.name }) }, icon('target'), t('op.trainWorst')) : null,
-          h('button', { class: 'btn btn--primary', type: 'button', onClick: function () { self.askSummary(this); } }, icon('sparkle'), t('op.aiSummary')))));
+          h('div', { class: 'row' }, h('h1', null, this.meView ? t('op.myTitle', { name: p.name }) : p.name), isMe && !this.meView ? ui.badge(t('op.you'), 'brand', 'person') : null),
+          h('p', { class: 'page-head__what' },
+            this.meView ? t('op.myWhat') : [t('op.dialogsN', { n: p.n_dialogs }), Object.keys(langs).join(', '), Object.keys(chans).join(', ')].join(' · ') + (p.manual ? ' · ' + t('op.manualN', { n: p.manual }) : ''))),
+        h('div', { class: 'page-head__actions' },
+          this.meView ? h('button', { class: 'btn btn--subtle', type: 'button', onClick: function () { CQA.me.set(null); } }, t('op.notMe')) : null,
+          !this.meView && !isMe ? h('button', { class: 'btn btn--subtle', type: 'button', 'data-tip': t('op.itsMeTitle'), onClick: function () {
+            CQA.me.set(p.name); ui.toast(t('op.meSet', { name: p.name }), { tone: 'success', action: { label: t('nav.profile'), href: '#/me' } });
+          } }, icon('person'), t('op.itsMe')) : null,
+          h('button', { class: 'btn', type: 'button', 'data-tip': t('op.aiSummaryTip'), onClick: function () { self.askSummary(this); } }, icon('sparkle'), t('op.aiSummary')),
+          worst ? h('a', { class: 'btn btn--primary', href: CQA.trainHref(worst.uid, { focus: [p.growth_zones[0].criterion_id], operator: p.name }) }, icon('target'), this.meView || isMe ? t('op.trainWorst') : t('op.assignWorst')) : null)));
     }
 
     // ---- балл против отдела
@@ -346,29 +394,29 @@
       else body = h('div', { class: 'zones' }, p.growth_zones.map(function (z, i) { return self.zoneCard(z, i); }));
       return h('section', { 'aria-labelledby': 'op-zones' },
         h('div', { class: 'section-head' },
-          h('h2', { class: 'section-title', id: 'op-zones' }, icon('trend'), t('op.zonesTitle', { n: p.growth_zones.length })),
+          h('h2', { class: 'section-title', id: 'op-zones' }, t('op.zonesTitle', { n: p.growth_zones.length })),
           h('span', { class: 'muted t-caption1' }, t('op.zonesSub'), ' ', ui.hint(t('op.zonesHint')))),
         body);
     }
 
     zoneCard(z, i) {
-      var p = this.p;
-      var exs = z.examples.map(function (ex) {
+      var p = this.p, self = this;
+      var exs = z.examples.slice(0, i === 0 ? 2 : 1).map(function (ex) {
         var q = ex.quote || ex.message_text;
         return h('div', { class: 'zone-ex' },
           h('div', { class: 'row zone-ex__head' },
-            h('a', { class: 'mono t-body1-strong', href: CQA.convHref(ex.uid, { crit: z.criterion_id }) }, ex.external_id),
+            h('a', { class: 't-body1-strong', href: CQA.convHref(ex.uid, { crit: z.criterion_id }) }, ex.external_id),
             CQA.verdict(ex.verdict, z.type, z.type === 'scale' ? (p.criteria.filter(function (c) { return c.criterion_id === z.criterion_id; })[0] || {}).top : null),
             ex.changed_by_appeal ? ui.badge(t('crit.changedByAppeal'), 'brand', 'scale') : null,
             h('span', { class: 'spacer' }),
             ex.total != null ? CQA.score(ex.total) : null),
-          q && ex.mid ? h('a', { class: 'risk__quote zone-ex__quote', href: CQA.convHref(ex.uid, { crit: z.criterion_id, m: ex.mid }), title: t('risk.openQuote', { mid: ex.mid }) },
-            h('span', { class: 'risk__mid' }, ex.mid), h('span', { class: 'risk__text' }, '«' + q + '»')) : null,
-          ex.explanation ? h('p', { class: 't-caption1 subtle zone-ex__expl' }, ex.explanation) : null,
-          ex.how_to_fix ? h('div', { class: 'zone-ex__fix' }, h('span', { class: 'crit__label' }, t('crit.howToFix')), h('div', { class: 'quote' }, ex.how_to_fix)) : null,
-          h('div', { class: 'row' }, h('a', { class: 'btn btn--small', href: CQA.trainHref(ex.uid, { focus: [z.criterion_id], operator: p.name }) }, icon('target'), t('op.train'))));
+          q && ex.mid ? h('a', { class: 'zone-ex__quote', href: CQA.convHref(ex.uid, { crit: z.criterion_id, m: ex.mid }), 'data-tip': t('risk.openQuote', { mid: ex.mid }) },
+            '«' + q + '»') : null,
+          ex.explanation ? h('p', { class: 'zone-ex__expl' }, CQA.cleanExplanation(ex.explanation, z.title)) : null,
+          ex.how_to_fix ? h('div', { class: 'zone-ex__fix' }, h('span', { class: 'crow__label' }, t('crit.howToFix')), h('div', { class: 'quote' }, ex.how_to_fix)) : null,
+          h('div', { class: 'row' }, h('a', { class: 'btn btn--small' + (i === 0 ? ' btn--primary' : ''), href: CQA.trainHref(ex.uid, { focus: [z.criterion_id], operator: p.name }) }, icon('target'), self.meView || same(CQA.me.get(), p.name) ? t('op.train') : t('crit.assign'))));
       });
-      return h('article', { class: 'card zone' },
+      return h('article', { class: 'card zone' + (i === 0 ? ' zone--main' : '') },
         h('div', { class: 'zone__head' },
           h('span', { class: 'zone__rank', 'aria-label': t('op.zoneRank', { n: i + 1 }) }, String(i + 1)),
           h('h3', { class: 'zone__title' }, CQA.critLabel(z.criterion_id, z.title))),
@@ -380,13 +428,10 @@
     }
 
     // ---- сильные стороны
-    strengthsSection() {
+    strengthsBody() {
       var p = this.p;
       if (!p.strengths.length) return null;
-      return h('section', { 'aria-labelledby': 'op-strong' },
-        h('div', { class: 'section-head' },
-          h('h2', { class: 'section-title', id: 'op-strong' }, icon('checkCircle'), t('op.strongTitle')),
-          h('span', { class: 'muted t-caption1' }, t('op.strongSub'))),
+      return h('div', null,
         h('div', { class: 'strengths' }, p.strengths.map(function (s) {
           var ex = s.example, q = ex && (ex.quote || ex.message_text);
           return h('article', { class: 'card strength' },
@@ -418,10 +463,7 @@
           h('td', { class: 'num' }, c.delta == null ? h('span', { class: 'muted' }, '—')
             : h('span', { class: 'delta delta--' + (Math.abs(c.delta) < 0.005 ? 'same' : c.delta > 0 ? 'up' : 'down') }, t('op.pp', { v: fmt.signed(pp(c.delta), 1) }))));
       }));
-      return h('section', { class: 'card', 'aria-labelledby': 'op-crit' },
-        h('div', { class: 'card__header' },
-          h('div', null, h('h2', { class: 'card__title', id: 'op-crit' }, t('op.critTitle')),
-            h('div', { class: 'muted t-caption1' }, t('op.critSub')))),
+      return h('div', null,
         h('div', { class: 'table-scroll' }, h('table', { class: 'table table--compact op-crit' },
           h('thead', null, h('tr', null,
             h('th', { scope: 'col' }, t('op.cCrit')),
@@ -432,11 +474,10 @@
           tbody)));
     }
 
-    grossSection() {
+    grossBody() {
       var p = this.p;
       if (!p.gross_errors.length) return null;
-      return h('section', { class: 'card radar-card', 'aria-labelledby': 'op-gross' },
-        h('div', { class: 'card__header' }, h('h2', { class: 'card__title radar-card__title', id: 'op-gross' }, icon('shield'), t('op.grossTitle', { n: p.gross_errors.length }))),
+      return h('div', null,
         h('div', { class: 'radar__list' }, p.gross_errors.map(function (g) {
           var q = g.quote || g.message_text;
           return h('article', { class: 'risk' },
@@ -455,11 +496,7 @@
       var done = list.filter(function (s) { return s.status === 'finished' && s.after_total != null; });
       var active = list.filter(function (s) { return s.status !== 'finished'; });
       var zone = p.growth_zones[0], ex = zone && zone.examples[0];
-      var head = h('div', { class: 'card__header' },
-        h('div', null, h('h2', { class: 'card__title row', id: 'op-train' }, icon('target'), t('op.trainTitle')),
-          h('div', { class: 'muted t-caption1' }, t('op.trainSub'))),
-        h('a', { class: 'btn btn--small', href: '#/trainer' }, t('op.trainAll'), icon('chevronRight')));
-      var card = h('section', { class: 'card', 'aria-labelledby': 'op-train' }, head);
+      var card = h('div', { class: 'stack' }, h('div', null, h('a', { class: 'link-more', href: '#/trainer' }, t('op.trainAll'), icon('chevronRight'))));
       if (!list.length) {
         card.appendChild(h('div', { class: 'row' }, h('span', { class: 'muted' }, t('op.trainNone')),
           ex ? h('a', { class: 'btn btn--small btn--primary', href: CQA.trainHref(ex.uid, { focus: [zone.criterion_id], operator: p.name }) }, icon('target'), t('op.trainStart')) : null));
@@ -491,9 +528,7 @@
         tr.addEventListener('click', function (e) { if (!e.target.closest('a')) location.hash = href; });
         return tr;
       }));
-      return h('section', { class: 'card', 'aria-labelledby': 'op-dialogs' },
-        h('div', { class: 'card__header' }, h('h2', { class: 'card__title', id: 'op-dialogs' }, t('op.dialogsTitle', { n: p.dialogs.length })),
-          h('span', { class: 'muted t-caption1' }, t('op.dialogsSort'))),
+      return h('div', null,
         h('div', { class: 'table-scroll' }, h('table', { class: 'table table--compact' },
           h('thead', null, h('tr', null,
             h('th', { scope: 'col' }, t('list.colId')), h('th', { scope: 'col' }, t('list.colLang')), h('th', { scope: 'col' }, t('list.colChannel')),
@@ -521,6 +556,55 @@
     }));
   };
 
+  // ================================================================== «Мой профиль»: #/me
+  /** Свой профиль оператора. В Dynamics имя берётся из учётной записи; в демо — один раз выбрать себя. */
+  class CqaPageMe extends HTMLElement {
+    connectedCallback() {
+      if (this._built) return;
+      this._built = true;
+      var self = this;
+      this.onMe = function () { self.render(); };
+      document.addEventListener('cqa-me-changed', this.onMe);
+      this.render();
+    }
+    disconnectedCallback() { document.removeEventListener('cqa-me-changed', this.onMe); }
+    render() {
+      var me = CQA.me.get();
+      this.textContent = '';
+      if (me) {
+        var el = document.createElement('cqa-page-operator');
+        el.params = { name: me };
+        el.meView = true;
+        this.appendChild(el);
+        return;
+      }
+      document.title = t('nav.profile') + ' · CQA';
+      var input = h('input', { class: 'input', type: 'search', placeholder: t('op.pickSearch'), 'aria-label': t('op.pickSearch') });
+      var box = h('div', { class: 'me-pick' }, ui.skeleton('text', 4));
+      var ops = [];
+      var draw = function () {
+        var q = input.value.trim().toLocaleLowerCase('ru');
+        var list = ops.filter(function (o) { return !q || o.name.toLocaleLowerCase('ru').indexOf(q) >= 0; });
+        CQA.dom.replace(box, list.length ? list.map(function (o) {
+          return h('button', { class: 'me-pick__item', type: 'button', onClick: function () { CQA.me.set(o.name); } },
+            h('b', null, o.name), h('span', { class: 'muted t-caption1' }, t('palette.opSub', { n: o.n_dialogs, s: fmt.score(o.avg_total) })));
+        }) : h('p', { class: 'muted' }, t('op.emptyFiltered')));
+      };
+      input.addEventListener('input', U.debounce(draw, 120));
+      this.appendChild(h('div', { class: 'page op-page' },
+        ui.pageHead({ title: t('nav.profile'), what: t('op.pickWhat') }),
+        h('section', { class: 'panel stack stack--l' },
+          h('div', { class: 'input-with-icon' }, icon('search'), input),
+          box)));
+      CQA.api.operators().then(function (d) {
+        ops = (d.operators || []).slice().sort(function (a, b) { return a.name.localeCompare(b.name, 'ru'); });
+        draw();
+      }, function (err) { CQA.dom.replace(box, ui.error(err)); });
+      setTimeout(function () { input.focus(); }, 0);
+    }
+  }
+
+  customElements.define('cqa-page-me', CqaPageMe);
   customElements.define('cqa-page-operators', CqaPageOperators);
   customElements.define('cqa-page-operator', CqaPageOperator);
 })(window.CQA = window.CQA || {});

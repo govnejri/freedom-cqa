@@ -24,7 +24,7 @@
       this.filters = {};
       var q = this.query || {};
       FILTER_KEYS.forEach(function (k) { if (q[k]) this.filters[k] = q[k]; }, this);
-      this.sort = q.sort || 'external_id';
+      this.sort = q.sort || 'score';
       this.build();
       this.loadDatasets();
       this.fetch();
@@ -35,7 +35,7 @@
       var self = this;
       this.filters = {};
       FILTER_KEYS.forEach(function (k) { if (query[k]) self.filters[k] = query[k]; });
-      this.sort = query.sort || 'external_id';
+      this.sort = query.sort || 'score';
       this.syncControls();
       this.fetch();
       return true;
@@ -45,9 +45,10 @@
       var self = this;
       this.count = h('span', { class: 'muted' });
       this.exportMenu = document.createElement('cqa-export-menu');
-      var header = h('div', { class: 'page-header' },
-        h('div', null, h('h1', null, t('nav.conversations')), h('div', { class: 'page-header__sub' }, this.count)),
-        h('div', { class: 'row' }, this.exportMenu));
+      var header = h('div', { class: 'page-head' },
+        h('div', null, h('h1', null, t('nav.queue')), h('p', { class: 'page-head__what' }, t('list.what'), ' ', this.count)),
+        h('div', { class: 'page-head__actions' }, this.exportMenu,
+          h('button', { class: 'btn', type: 'button', onClick: function () { CQA.openPipeline({ group: self.filters.group || null }); } }, icon('download'), t('pipe.open'))));
 
       // --- фильтры
       this.ctl = {};
@@ -108,7 +109,7 @@
     syncUrl() {
       var q = {};
       FILTER_KEYS.forEach(function (k) { if (this.filters[k]) q[k] = this.filters[k]; }, this);
-      if (this.sort !== 'external_id') q.sort = this.sort;
+      if (this.sort !== 'score') q.sort = this.sort;
       CQA.router.setQuery(q);
     }
 
@@ -123,9 +124,29 @@
       this.exportMenu.group = this.filters.group || null;
     }
 
+    /** Диапазон балла проверяем на месте: 0–100, «от» не больше «до». Ошибку — у полей, без запроса. */
+    rangeError() {
+      var a = this.filters.score_min, b = this.filters.score_max;
+      var na = a === '' || a == null ? null : Number(a), nb = b === '' || b == null ? null : Number(b);
+      var bad = function (x) { return x != null && (isNaN(x) || x < 0 || x > 100); };
+      if (bad(na) || bad(nb)) return t('list.rangeBounds');
+      if (na != null && nb != null && na > nb) return t('list.rangeOrder');
+      return null;
+    }
+
     fetch() {
       var self = this;
       var seq = (this._seq = (this._seq || 0) + 1);
+      var rerr = this.rangeError();
+      ['score_min', 'score_max'].forEach(function (k) { if (rerr) self.ctl[k].setAttribute('aria-invalid', 'true'); else self.ctl[k].removeAttribute('aria-invalid'); });
+      if (rerr) {
+        this.rows = null;
+        this.count.textContent = '';
+        CQA.dom.replace(this.tableBox, ui.empty(t('list.rangeTitle'), rerr, h('button', { class: 'btn', type: 'button', onClick: function () {
+          self.filters.score_min = ''; self.filters.score_max = ''; self.syncControls(); self.changed();
+        } }, t('list.rangeReset')), 'filter'));
+        return;
+      }
       var q = {};
       FILTER_KEYS.forEach(function (k) { if (self.filters[k]) q[k] = self.filters[k]; });
       // сортируем на клиенте; серверу передаём тот же ключ (score → total) на случай пагинации
@@ -162,12 +183,12 @@
       var self = this;
       var rows = this.rows;
       var total = rows.length;
-      this.count.textContent = t('list.count', { n: total });
+      this.count.textContent = t('list.countWorst', { n: total });
       if (!total) {
         var anyFilter = FILTER_KEYS.some(function (k) { return self.filters[k]; });
         CQA.dom.replace(this.tableBox, anyFilter
           ? ui.empty(t('list.emptyFiltered'), t('list.emptyFilteredText'), h('button', { class: 'btn', type: 'button', onClick: function () { self.filters = {}; self.syncControls(); self.changed(); } }, t('list.reset')), 'filter')
-          : ui.empty(t('list.empty'), t('list.emptyText'), h('a', { class: 'btn btn--primary', href: '#/' }, icon('upload'), t('dash.loadDataset')), 'chat'));
+          : ui.empty(t('list.empty'), t('list.emptyText'), h('button', { class: 'btn btn--primary', type: 'button', onClick: function () { CQA.openPipeline(); } }, icon('download'), t('dash.loadDataset')), 'chat'));
         return;
       }
       var key = this.sort.replace(/^-/, ''), desc = this.sort.charAt(0) === '-';

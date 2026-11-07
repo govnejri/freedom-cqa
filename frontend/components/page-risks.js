@@ -15,22 +15,18 @@
       this.groupSel = h('select', { class: 'select select--small', id: 'risk-group', 'aria-label': t('dash.group') });
       this.groupSel.addEventListener('change', function () { self.group = self.groupSel.value || null; self.sync(); self.load(); });
       this.filters = h('div', { class: 'row risk-filters' });
-      this.box = h('div', null, ui.skeleton('card', 6));
-      this.sub = h('div', { class: 'page-header__sub' });
+      this.box = h('div', { class: 'panel panel--flush risks-panel' }, h('div', { style: { padding: '16px 20px' } }, ui.skeleton('table', 6)));
+      this.sub = h('p', { class: 'page-head__what' }, t('risk.what'));
+      this.meta = h('span', { class: 'panel__meta' });
       this.textContent = '';
       this.appendChild(h('div', { class: 'page' },
-        h('div', { class: 'page-header' },
+        h('div', { class: 'page-head' },
           h('div', null, h('h1', null, t('risk.title')), this.sub),
-          h('div', { class: 'row' }, h('label', { class: 'muted', for: 'risk-group' }, t('dash.group')), this.groupSel)),
+          h('div', { class: 'page-head__actions' }, h('label', { class: 'muted t-caption1', for: 'risk-group' }, t('dash.group')), this.groupSel)),
         h('div', { class: 'stack stack--l' },
-          ui.msgbar('info', null, t('risk.intro')),
           this.filters,
           this.box)));
-      this.addEventListener('cqa-compliance-changed', function () {
-        var r = self.risks;
-        self.sub.textContent = t('risk.sub', { n: r.total, c: r.n_conversations, s: r.items.filter(function (it) { return it.compliance; }).length });
-        self.renderFilters();
-      });
+      this.addEventListener('cqa-compliance-changed', function () { self.renderFilters(); });
       CQA.api.datasets().catch(function () { return []; }).then(function (list) {
         var q = self.query || {};
         self.group = q.group === 'all' ? null : q.group || CQA.defaultGroup(list);
@@ -54,17 +50,19 @@
     }
 
     load() {
-      var self = this;
-      ui.load(this.box, ui.skeleton('card', 6), function () { return CQA.api.risks(self.group); }, function (r) {
-        self.risks = r;
+      var self = this, g = this.group;
+      ui.load(this.box, h('div', { style: { padding: '16px 20px' } }, ui.skeleton('table', 6)), function () {
+        return Promise.all([CQA.api.risks(g), CQA.api.conversations(g ? { group: g } : {}).catch(function () { return []; })]);
+      }, function (res) {
+        self.risks = res[0];
+        self.ops = {};
+        (res[1] || []).forEach(function (c) { if (c.operator_name) self.ops[c.uid] = c.operator_name; });
         self.render();
       });
     }
 
     render() {
       var r = this.risks, q = this.query || {};
-      var sent = r.items.filter(function (it) { return it.compliance; }).length;
-      this.sub.textContent = r.total ? t('risk.sub', { n: r.total, c: r.n_conversations, s: sent }) : t('risk.none');
       this.renderFilters();
       var view = r;
       if (q.open === '1') {
@@ -81,11 +79,13 @@
       }
       CQA.dom.clear(this.box);
       if (!view.total) {
-        this.box.appendChild(ui.empty(r.total ? t('risk.allSent') : t('risk.none'), r.total ? null : t('risk.noneText'), null, 'checkCircle'));
+        this.box.appendChild(ui.empty(r.total ? t('risk.allSent') : t('risk.none'), r.total ? t('risk.allSentText') : t('risk.noneText'),
+          r.total ? h('a', { class: 'btn', href: '#/risks?group=' + encodeURIComponent(this.group || 'all') }, t('risk.showAll')) : null, 'checkCircle'));
         return;
       }
       var el = document.createElement('cqa-risk-radar');
-      el.data = { risks: view, limit: null, category: q.category || null, detailed: true };
+      el.data = { risks: view, limit: null, category: q.category || null, detailed: true, operators: this.ops };
+      this.box.appendChild(h('div', { style: { height: '8px' } }));
       this.box.appendChild(el);
     }
 

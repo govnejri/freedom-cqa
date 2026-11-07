@@ -23,7 +23,8 @@
     if (by === 'channel') return U.channelLabel(key);
     if (by === 'operator' && key === 'не назначен') return t('sl.noOperator');
     if (by === 'reason' && key === 'нет сигналов') return t('sl.noSignals');
-    return key;
+    key = String(key == null ? '' : key);
+    return by === 'reason' ? key.charAt(0).toUpperCase() + key.slice(1) : key;
   }
 
   class CqaPageSlices extends HTMLElement {
@@ -49,8 +50,9 @@
       this.box = h('div', { class: 'stack stack--l' }, ui.skeleton('table', 8));
       this.textContent = '';
       this.appendChild(h('div', { class: 'page sl-page' },
+        CQA.subnav('team', 'slices'),
         h('div', { class: 'page-header' },
-          h('div', null, h('h1', null, t('nav.slices')), h('div', { class: 'page-header__sub' }, t('sl.sub'))),
+          h('div', null, h('h1', null, t('team.slicesTitle')), h('div', { class: 'page-header__sub' }, t('sl.sub'))),
           h('div', { class: 'row' }, h('label', { class: 'muted t-caption1' }, t('dash.group')), this.groupSel)),
         h('div', { class: 'row sl-controls' }, h('div', { class: 'segmented-scroll' }, this.seg)),
         this.box));

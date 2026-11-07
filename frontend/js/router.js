@@ -2,36 +2,38 @@
 (function (CQA) {
   'use strict';
 
-  // roles: в каких ролях маршрут «свой» (первая — домашняя). Прямая ссылка на маршрут чужой роли переключает роль.
-  var ALL = ['lead', 'qa', 'operator'];
+  // nav — пункт меню, который подсвечивается; group — группа меню для «хлебных крошек» (lead | qa | operator).
+  // Группы меню — не режимы: переход по ссылке ничего не переключает.
   var routes = [
-    { re: /^\/?$/, tag: 'cqa-page-dashboard', nav: 'dashboard', keys: [], roles: ['lead'] },
-    { re: /^\/risks\/?$/, tag: 'cqa-page-risks', nav: 'risks', keys: [], roles: ['lead'] },
-    { re: /^\/slices\/?$/, tag: 'cqa-page-slices', nav: 'slices', keys: [], roles: ['lead'] },
-    { re: /^\/assistant\/?$/, tag: 'cqa-page-assistant', nav: 'assistant', keys: [], roles: ['lead'] },
-    { re: /^\/conversations\/?$/, tag: 'cqa-page-conversations', nav: 'conversations', keys: [], roles: ['qa', 'lead'] },
-    { re: /^\/c\/([^/]+)$/, tag: 'cqa-page-conversation', nav: 'conversations', keys: ['uid'], roles: ['qa', 'lead', 'operator'] },
-    { re: /^\/appeals\/?$/, tag: 'cqa-page-appeals', nav: 'appeals', keys: [], roles: ['qa'] },
-    { re: /^\/appeals\/(\d+)$/, tag: 'cqa-page-appeal', nav: 'appeals', keys: ['id'], roles: ['qa'] },
-    { re: /^\/checklists\/([^/]+)\/?$/, tag: 'cqa-page-checklist', nav: 'checklist', keys: ['cid'], roles: ['qa'] },
-    { re: /^\/checklists\/([^/]+)\/(precedents)$/, tag: 'cqa-page-checklist', nav: 'checklist', keys: ['cid', 'tab'], roles: ['qa'] },
-    { re: /^\/checklists\/([^/]+)\/v\/(\d+)$/, tag: 'cqa-page-checklist', nav: 'checklist', keys: ['cid', 'vid'], roles: ['qa'] },
-    { re: /^\/checklists\/([^/]+)\/diff\/(\d+)\/(\d+)$/, tag: 'cqa-page-checklist', nav: 'checklist', keys: ['cid', 'a', 'b'], roles: ['qa'] },
-    { re: /^\/runs\/(\d+)$/, tag: 'cqa-page-run', nav: 'dashboard', keys: ['id'], roles: ALL },
-    { re: /^\/runs\/(\d+)\/diff$/, tag: 'cqa-page-run-diff', nav: 'checklist', keys: ['id'], roles: ['qa', 'lead'] },
-    { re: /^\/log\/(\d+)$/, tag: 'cqa-page-log', nav: 'conversations', keys: ['id'], roles: ALL },
-    { re: /^\/quality\/?$/, tag: 'cqa-page-quality', nav: 'quality', keys: [], roles: ['qa'] },
-    { re: /^\/operators\/?$/, tag: 'cqa-page-operators', nav: 'profile', keys: [], roles: ['operator', 'lead', 'qa'] },
-    { re: /^\/operators\/([^/]+)$/, tag: 'cqa-page-operator', nav: 'profile', keys: ['name'], roles: ['operator', 'lead', 'qa'] },
-    { re: /^\/trainer\/?$/, tag: 'cqa-page-trainer', nav: 'trainer', keys: [], roles: ['operator'] },
-    { re: /^\/trainer\/new$/, tag: 'cqa-page-trainer-new', nav: 'trainer', keys: [], roles: ['operator'] },
-    { re: /^\/trainer\/(\d+)$/, tag: 'cqa-page-trainer-session', nav: 'trainer', keys: ['id'], roles: ['operator'] },
-    { re: /^\/tutor\/?$/, tag: 'cqa-page-tutor', nav: 'tutor', keys: [], roles: ['operator'] },
-    { re: /^\/settings\/?$/, tag: 'cqa-page-settings', nav: 'settings', keys: [], roles: ALL }
+    { re: /^\/?$/, tag: 'cqa-page-dashboard', nav: 'dashboard', group: 'lead', keys: [] },
+    { re: /^\/risks\/?$/, tag: 'cqa-page-risks', nav: 'risks', group: 'lead', keys: [] },
+    { re: /^\/slices\/?$/, tag: 'cqa-page-slices', nav: 'team', group: 'lead', keys: [] },
+    { re: /^\/assistant\/?$/, tag: 'cqa-page-assistant', nav: 'assistant', group: 'lead', keys: [] },
+    { re: /^\/conversations\/?$/, tag: 'cqa-page-conversations', nav: 'queue', group: 'qa', keys: [] },
+    { re: /^\/c\/([^/]+)$/, tag: 'cqa-page-conversation', nav: 'queue', group: 'qa', keys: ['uid'] },
+    { re: /^\/appeals\/?$/, tag: 'cqa-page-appeals', nav: 'appeals', group: 'qa', keys: [] },
+    { re: /^\/appeals\/(\d+)$/, tag: 'cqa-page-appeal', nav: 'appeals', group: 'qa', keys: ['id'] },
+    { re: /^\/checklists\/([^/]+)\/?$/, tag: 'cqa-page-checklist', nav: 'checklist', group: 'qa', keys: ['cid'] },
+    { re: /^\/checklists\/([^/]+)\/(precedents)$/, tag: 'cqa-page-checklist', nav: 'checklist', group: 'qa', keys: ['cid', 'tab'] },
+    { re: /^\/checklists\/([^/]+)\/v\/(\d+)$/, tag: 'cqa-page-checklist', nav: 'checklist', group: 'qa', keys: ['cid', 'vid'] },
+    { re: /^\/checklists\/([^/]+)\/diff\/(\d+)\/(\d+)$/, tag: 'cqa-page-checklist', nav: 'checklist', group: 'qa', keys: ['cid', 'a', 'b'] },
+    { re: /^\/runs\/(\d+)$/, tag: 'cqa-page-run', nav: 'queue', group: 'qa', keys: ['id'] },
+    { re: /^\/runs\/(\d+)\/diff$/, tag: 'cqa-page-run-diff', nav: 'checklist', group: 'qa', keys: ['id'] },
+    { re: /^\/log\/(\d+)$/, tag: 'cqa-page-log', nav: 'queue', group: 'qa', keys: ['id'] },
+    { re: /^\/quality\/?$/, tag: 'cqa-page-quality', nav: 'quality', group: 'qa', keys: [] },
+    { re: /^\/operators\/?$/, tag: 'cqa-page-operators', nav: 'team', group: 'lead', keys: [] },
+    { re: /^\/operators\/([^/]+)$/, tag: 'cqa-page-operator', nav: 'team', group: 'lead', keys: ['name'] },
+    { re: /^\/me\/?$/, tag: 'cqa-page-me', nav: 'profile', group: 'operator', keys: [] },
+    { re: /^\/trainer\/?$/, tag: 'cqa-page-trainer', nav: 'learning', group: 'operator', keys: [] },
+    { re: /^\/trainer\/new$/, tag: 'cqa-page-trainer-new', nav: 'learning', group: 'operator', keys: [] },
+    { re: /^\/trainer\/(\d+)$/, tag: 'cqa-page-trainer-session', nav: 'learning', group: 'operator', keys: ['id'] },
+    { re: /^\/tutor\/?$/, tag: 'cqa-page-tutor', nav: 'learning', group: 'operator', keys: [] },
+    { re: /^\/settings\/?$/, tag: 'cqa-page-settings', nav: 'settings', group: null, keys: [] }
   ];
 
   var outlet = null;
   var current = null; // {route, path, params, query, el}
+  var previous = null; // {path, query} — откуда пришли (для «← назад» в карточке)
   var listeners = [];
 
   function parse(hash) {
@@ -87,12 +89,13 @@
   }
 
   function mount(route, p, params, isFirst) {
+    if (current && current.path !== p.path) previous = { path: current.path, query: current.query, nav: current.route && current.route.nav };
     var el = document.createElement(route.tag);
     el.params = params;
     el.query = p.query;
     outlet.textContent = '';
     // окна (ui.modal) живут в body: при смене страницы закрываем оставшиеся — как по Esc
-    Array.prototype.forEach.call(document.querySelectorAll('dialog.dialog'), function (d) { d.dispatchEvent(new Event('cancel')); });
+    Array.prototype.forEach.call(document.querySelectorAll('dialog.dialog, dialog.palette'), function (d) { d.dispatchEvent(new Event('cancel')); });
     outlet.appendChild(el);
     current = { route: route, path: p.path, params: params, query: p.query, el: el };
     if (!isFirst) {
@@ -130,6 +133,7 @@
       } catch (e) { /* iframe с ограничениями: просто молча оставляем URL */ }
     },
     get current() { return current; },
+    get previous() { return previous; },
     routes: routes,
     onChange: function (fn) { listeners.push(fn); }
   };

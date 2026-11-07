@@ -47,22 +47,32 @@
       this.force = h('input', { type: 'checkbox' });
       this.error = h('div', { 'aria-live': 'assertive' });
 
+      var titleOf = {};
+      enabled.forEach(function (c) { titleOf[c.id] = c.title; });
       CQA.dom.append(this, [
-        h('div', { class: 'muted' }, t('apply.intro', { v: d.version.version })),
+        h('p', null, changed.length
+          ? t('apply.summaryChanged', { v: d.version.version, list: changed.map(function (id) { return id + ' ' + (titleOf[id] || ''); }).join(', ') })
+          : t('apply.summaryAll', { v: d.version.version })),
         d.active && d.active.id !== d.version.id ? ui.msgbar('warning', t('apply.notActive', { v: d.version.version, a: d.active.version }), t('apply.notActiveHint')) : null,
-        h('fieldset', { class: 'stack' },
-          h('legend', { class: 'field__label' }, t('apply.scope')),
-          h('label', { class: 'check' }, this.scopeGroup, t('apply.scopeGroup'), this.groupSel),
-          h('label', { class: 'check' }, this.scopeUids, t('apply.scopeUids')),
-          this.convBox),
-        h('fieldset', { class: 'stack' },
-          h('legend', { class: 'field__label' }, t('apply.criteria')),
-          h('div', { class: 'field__hint' }, changed.length ? t('apply.criteriaChanged', { list: changed.join(', '), v: baseline.version }) : t('apply.criteriaAll')),
-          h('div', { class: 'row' },
-            changed.length ? h('button', { class: 'btn btn--small', type: 'button', onClick: function () { setAll(changed); } }, t('apply.onlyChanged')) : null,
-            h('button', { class: 'btn btn--small', type: 'button', onClick: function () { setAll(null); } }, t('apply.all'))),
-          critList),
-        h('label', { class: 'check check--small' }, this.force, t('dash.force')),
+        h('div', { class: 'field' },
+          h('span', { class: 'field__label' }, t('apply.scope')),
+          h('label', { class: 'check' }, this.scopeGroup, t('apply.scopeGroup'), this.groupSel)),
+        h('p', { class: 'muted t-caption1' }, t('apply.costNote')),
+        h('details', { class: 'disclosure' },
+          h('summary', null, icon('chevronRight'), t('apply.advanced')),
+          h('div', { class: 'disclosure__body stack stack--l' },
+            h('fieldset', { class: 'stack' },
+              h('legend', { class: 'field__label' }, t('apply.scopeOther')),
+              h('label', { class: 'check' }, this.scopeUids, t('apply.scopeUids')),
+              this.convBox),
+            h('fieldset', { class: 'stack' },
+              h('legend', { class: 'field__label' }, t('apply.criteria')),
+              h('div', { class: 'field__hint' }, changed.length ? t('apply.criteriaChanged', { list: changed.join(', '), v: baseline.version }) : t('apply.criteriaAll')),
+              h('div', { class: 'row' },
+                changed.length ? h('button', { class: 'btn btn--small', type: 'button', onClick: function () { setAll(changed); } }, t('apply.onlyChanged')) : null,
+                h('button', { class: 'btn btn--small', type: 'button', onClick: function () { setAll(null); } }, t('apply.all'))),
+              critList),
+            h('label', { class: 'check check--small' }, this.force, t('pipe.force')))),
         this.error]);
 
       CQA.api.datasets().then(function (list) {
@@ -132,10 +142,19 @@
           if (!form.validate(dto)) return;
           go.disabled = true;
           CQA.dom.replace(go, ui.spinner(), t('dash.starting'));
-          CQA.api.createRun(dto).then(function (run) {
-            close();
-            CQA.router.go('/runs/' + run.id);
-          }, function (err) {
+          // снимок итогов «до» — после прогона страница покажет «было → стало»
+          var snap = CQA.api.conversations(dto.group ? { group: dto.group } : {}).then(function (list) {
+            var m = {};
+            (list || []).forEach(function (s) { m[s.uid] = s.final_total != null ? s.final_total : s.total; });
+            return m;
+          }).catch(function () { return null; });
+          snap.then(function (before) {
+            return CQA.api.createRun(dto).then(function (run) {
+              if (before) CQA.store.set('cqa.runBefore.' + run.id, { group: dto.group || null, totals: before }, true);
+              close();
+              CQA.router.go('/runs/' + run.id);
+            });
+          }).catch(function (err) {
             go.disabled = false;
             CQA.dom.replace(go, icon('flash'), t('apply.start'));
             form.showError(err);

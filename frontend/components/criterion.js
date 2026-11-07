@@ -1,10 +1,11 @@
-/* <cqa-criterion> — результат по одному критерию: вердикт, баллы и вес (после перераспределения), объяснение,
-   доказательства-чипы, проверенный участок, «как надо было», «требует проверки», апелляция.
-   .data = {cr: CriterionResultDTO, top, appeal: AppealDTO|null, selected, canAppeal}
-   События (bubbles): cqa-criterion-select {cid}, cqa-evidence {cid, mid}, cqa-range {cid, range}, cqa-appeal {cid} */
+/* <cqa-criterion> — строка критерия в карточке: номер, название, вердикт-пилюля, потеря баллов.
+   Раскрытая строка: объяснение, цитаты (клик подсвечивает реплику), «как надо было», второе мнение при расхождении,
+   апелляция и действия «Оспорить», «Потренироваться» / «Назначить тренировку», «Изменить критерий».
+   .data = {cr, top, appeal, selected, canAppeal, canEdit, trainUid, trainOperator, trainSelf, messages: {mid: MessageDTO}}
+   События (bubbles): cqa-criterion-select {cid, toggle}, cqa-evidence {cid, mid}, cqa-range {cid, range}, cqa-appeal {cid} */
 (function (CQA) {
   'use strict';
-  var h = CQA.h, icon = CQA.icon, t = CQA.t, fmt = CQA.fmt, U = CQA.util;
+  var h = CQA.h, icon = CQA.icon, t = CQA.t, fmt = CQA.fmt, U = CQA.util, ui = CQA.ui;
 
   function fire(el, name, detail) { el.dispatchEvent(new CustomEvent(name, { bubbles: true, detail: detail })); }
 
@@ -14,161 +15,169 @@
     get cid() { return this._d && this._d.cr.criterion_id; }
 
     set selected(on) {
-      this.classList.toggle('is-selected', !!on);
-      if (this.headBtn) this.headBtn.setAttribute('aria-pressed', String(!!on));
+      this.classList.toggle('is-open', !!on);
+      if (this.headBtn) this.headBtn.setAttribute('aria-expanded', String(!!on));
+      if (this.body) this.body.hidden = !on;
     }
 
     render() {
       var d = this._d, cr = d.cr, self = this;
-      var score = cr.score || null;
-      var verdict = cr.final_verdict != null ? cr.final_verdict : cr.verdict;
+      var E = CQA.evalUtil;
+      var verdict = E.vOf(cr);
       var changed = cr.final_verdict != null && cr.verdict != null && cr.final_verdict !== cr.verdict;
       var isFlag = cr.type === 'flag';
       var isNA = verdict === 'N/A';
-      var tone = U.verdictTone(verdict, cr.type, d.top);
-      this.className = 'crit crit--' + tone + (cr.status === 'failed' ? ' crit--failed' : '');
+      var gross = E.isGross(cr);
+      var loss = E.lossOf(cr);
+      var tone = gross ? 'gross' : U.verdictTone(verdict, cr.type, d.top);
+      var violation = gross || (CQA.isViolation && CQA.isViolation(verdict, cr.type, d.top));
+      this.className = 'crow crow--' + tone + (isNA ? ' crow--na' : '') + (cr.status === 'failed' ? ' crow--failed' : '');
       this.id = 'crit-' + cr.criterion_id;
       this.textContent = '';
 
-      // ---- заголовок (кнопка выбора критерия)
+      // ---- строка
       var pts;
-      if (isFlag) pts = null;
-      else if (isNA) pts = h('span', { class: 'crit__pts muted' }, t('crit.naPoints'));
-      else if (score) pts = h('span', { class: 'crit__pts num' }, h('b', null, fmt.score(score.points)), ' / ', fmt.score(score.max_points));
-      var verdictEl = h('span', { class: 'crit__verdict' },
-        changed ? [CQA.verdict(cr.verdict, cr.type, d.top, { strike: true }), icon('arrowRight', 'icon--16 muted')] : null,
-        CQA.verdict(verdict, cr.type, d.top, { size: 'l' }));
+      if (cr.status === 'failed' || verdict == null) pts = h('span', { class: 'crow__pts muted' }, '—');
+      else if (isFlag || isNA) pts = h('span', { class: 'crow__pts muted' }, '—');
+      else if (loss > 0.004) pts = h('span', { class: 'crow__pts loss', 'aria-label': t('crit.lossAria', { p: fmt.score(loss) }) }, '−' + fmt.score(loss));
+      else pts = h('span', { class: 'crow__pts' }, cr.score ? fmt.score(cr.score.points) : '—');
+      var pill = gross
+        ? h('span', { class: 'badge badge--gross verdict' }, cr.category ? cap(cr.category) : t('badge.gross'))
+        : CQA.verdict(verdict, cr.type, d.top);
       this.headBtn = h('button', {
-        class: 'crit__head', type: 'button', 'aria-pressed': String(!!d.selected),
-        'aria-label': t('crit.selectAria', { id: cr.criterion_id, title: cr.title, v: U.verdictLabel(verdict, cr.type, d.top) }),
-        onClick: function () { fire(self, 'cqa-criterion-select', { cid: cr.criterion_id }); }
+        class: 'crow__head', type: 'button', 'aria-expanded': String(!!d.selected), 'aria-controls': 'crit-body-' + cr.criterion_id,
+        'aria-label': t('crit.selectAria', { id: cr.criterion_id, title: cr.title, v: gross ? t('badge.gross') : U.verdictLabel(verdict, cr.type, d.top) }),
+        onClick: function () { fire(self, 'cqa-criterion-select', { cid: cr.criterion_id, toggle: true }); }
       },
-        h('span', { class: 'crit__id' }, cr.criterion_id),
-        h('span', { class: 'crit__title' }, cr.title),
-        verdictEl, pts);
+        h('span', { class: 'crow__id' }, cr.criterion_id),
+        h('span', { class: 'crow__title' }, cr.title,
+          cr.appeal_id ? h('span', { class: 'crow__flag', 'data-tip': t('crit.hasAppeal') }, icon('scale', 'icon--16')) : null,
+          cr.needs_review ? h('span', { class: 'crow__flag', 'data-tip': t('badge.reviewTitle') }, icon('eye', 'icon--16')) : null),
+        h('span', { class: 'crow__verdict' }, changed ? CQA.verdict(cr.verdict, cr.type, d.top, { strike: true }) : null, pill),
+        pts,
+        h('span', { class: 'crow__chev', 'aria-hidden': 'true' }, icon('chevronDown', 'icon--16')));
       this.appendChild(this.headBtn);
 
-      var body = h('div', { class: 'crit__body' });
+      // ---- раскрытие
+      var body = h('div', { class: 'crow__body', id: 'crit-body-' + cr.criterion_id, hidden: !d.selected });
+      this.body = body;
       this.appendChild(body);
 
-      // ---- вес (+ отметка «проверено второй моделью»)
-      var agreed = cr.second_opinion && cr.second_opinion.verdict && cr.second_opinion.agree !== false;
-      var checkedMark = agreed ? h('span', { class: 'crit__checked', title: t('crit.secondAgreeTitle', { m: cr.second_opinion.model || cr.second_opinion.profile || '' }) },
-        icon('check', 'icon--16'), t('crit.secondAgree')) : null;
-      if (isFlag && checkedMark) body.appendChild(h('div', { class: 'crit__weight t-caption1' }, checkedMark));
-      if (!isFlag) {
-        var eff = score ? score.effective_weight : null;
-        var wl = h('div', { class: 'crit__weight t-caption1' }, t('crit.weight', { w: fmt.num(cr.weight) }));
-        if (isNA) wl.appendChild(h('span', null, ' · ', t('crit.weightRedistributed')));
-        else if (eff != null && Math.abs(eff - cr.weight) >= 0.005) {
-          wl.appendChild(h('span', { title: t('crit.effWeightTitle') }, ' → ', h('b', null, fmt.num(eff)), ' ', t('crit.afterRedistribution')));
-        }
-        if (checkedMark) wl.appendChild(checkedMark);
-        body.appendChild(wl);
-      }
+      if (cr.status === 'failed') body.appendChild(ui.msgbar('warning', t('crit.failed'), cr.error || null));
+      var expl = cleanExplanation(cr.explanation, cr.title);
+      if (expl) body.appendChild(h('p', { class: 'crow__expl' }, expl));
 
-      // ---- бейджи
-      var badges = [];
-      if (isFlag && verdict === 'Да') badges.push(CQA.ui.badge(cr.category ? t('crit.grossCategory', { c: cr.category }) : t('badge.gross'), 'danger-filled', 'warning'));
-      if (cr.needs_review) badges.push(CQA.ui.badge(t('badge.review'), 'warning', 'eye', { title: t('badge.reviewTitle') }));
-      if (cr.status === 'failed') badges.push(CQA.ui.badge(t('crit.failed'), 'danger', 'error'));
-      if (changed) badges.push(CQA.ui.badge(t('crit.changedByAppeal'), 'brand', 'scale'));
-      if (badges.length) body.appendChild(h('div', { class: 'row crit__badges' }, badges));
-
-      if (cr.status === 'failed' && cr.error) body.appendChild(h('div', { class: 'crit__error t-caption1' }, cr.error));
-
-      // ---- объяснение
-      if (cr.explanation) body.appendChild(h('p', { class: 'crit__expl' }, cr.explanation));
-
-      // ---- доказательства
+      // доказательства: «кто, когда — «цитата»» → подсветка реплики в переписке
       if (cr.evidence && cr.evidence.length) {
         var chips = h('div', { class: 'evchips' });
         cr.evidence.forEach(function (ev) {
           var bad = ev.ok === false;
-          var chip = h('button', {
+          var m = d.messages && d.messages[ev.id];
+          var who = m ? [CQA.i18n.tx('role.' + m.speaker, m.speaker), fmt.ts(m.ts_raw)].filter(Boolean).join(', ') : ev.id;
+          chips.appendChild(h('button', {
             class: 'evchip' + (bad ? ' evchip--bad' : ''), type: 'button',
-            title: bad ? t('crit.evidenceBad') : t('crit.goToMessage', { mid: ev.id }),
+            'data-tip': bad ? t('crit.evidenceBad') : null,
             'aria-label': t('crit.goToMessage', { mid: ev.id }) + ': ' + ev.quote,
-            onClick: function () { fire(self, 'cqa-evidence', { cid: cr.criterion_id, mid: ev.id }); }
+            onClick: function (e) {
+              Array.prototype.forEach.call(chips.querySelectorAll('.evchip'), function (c) { c.classList.remove('is-active'); });
+              e.currentTarget.classList.add('is-active');
+              fire(self, 'cqa-evidence', { cid: cr.criterion_id, mid: ev.id });
+            }
           },
-            h('span', { class: 'evchip__id' }, ev.id),
+            h('span', { class: 'evchip__id' }, who),
             h('span', { class: 'evchip__q' }, '«' + ev.quote + '»'),
-            bad ? icon('warning') : ev.repaired ? h('span', { title: t('crit.evidenceRepaired') }, icon('info')) : null);
-          chips.appendChild(chip);
+            bad ? icon('warning') : null));
         });
-        body.appendChild(h('div', { class: 'crit__section' }, h('div', { class: 'crit__label' }, t('crit.evidence')), chips));
+        body.appendChild(h('div', { class: 'crow__section' }, h('div', { class: 'crow__label' }, t('crit.evidence'), h('span', { class: 'muted' }, ' · ' + t('crit.evidenceHint'))), chips));
       }
 
-      // ---- проверенный участок
-      if (cr.checked_range && cr.checked_range.length === 2 && cr.checked_range[0]) {
-        var r = cr.checked_range;
-        var label = r[0] === r[1] ? r[0] : r[0] + '–' + r[1];
-        body.appendChild(h('div', { class: 'crit__section crit__range' },
-          h('span', { class: 'crit__label' }, t('crit.checkedRange')),
-          h('button', { class: 'evchip evchip--plain', type: 'button', title: t('crit.showRange'),
-            onClick: function () { fire(self, 'cqa-range', { cid: cr.criterion_id, range: r }); } },
-          h('span', { class: 'evchip__id' }, label)),
-          h('span', { class: 'muted t-caption1' }, t('crit.checkedRangeHint'))));
-      }
-
-      // ---- как надо было
+      // как надо было
       if (cr.how_to_fix) {
-        body.appendChild(h('details', { class: 'disclosure crit__fix' },
-          h('summary', null, icon('chevronRight'), t('crit.howToFix')),
-          h('div', { class: 'disclosure__body' }, h('div', { class: 'quote' }, cr.how_to_fix))));
+        body.appendChild(h('div', { class: 'crow__section' },
+          h('div', { class: 'crow__label' }, t('crit.howToFix')),
+          h('div', { class: 'quote crow__fix' }, cr.how_to_fix)));
       }
 
-      // ---- второе мнение: расхождение — заметный блок, согласие — отметка в строке веса
+      // второе мнение — только расхождение
       var so = cr.second_opinion && cr.second_opinion.verdict ? cr.second_opinion : null;
       if (so && so.agree === false) {
-        body.appendChild(h('div', { class: 'crit__second crit__second--disagree', role: 'note' },
-          h('div', { class: 'row' }, icon('warning', 'icon--16'),
-            h('span', { class: 't-caption1-strong' }, t('crit.secondDisagree')),
+        body.appendChild(h('div', { class: 'crow__second', role: 'note' },
+          h('div', { class: 'row' }, icon('people', 'icon--16'),
+            h('b', null, t('crit.secondDisagree')),
             CQA.verdict(so.verdict, cr.type, d.top),
-            so.near ? h('span', { class: 'muted t-caption1' }, t('eval.near')) : null,
-            so.model ? h('span', { class: 'muted t-caption1' }, so.model) : null),
+            so.near ? h('span', { class: 'muted t-caption1' }, t('eval.near')) : null),
           so.explanation ? h('div', { class: 't-caption1 subtle' }, so.explanation) : null,
           d.canAppeal !== false ? h('div', { class: 't-caption1 muted' }, t('crit.secondDecide')) : null));
       }
 
-      // ---- рассуждение модели
-      if (cr.reasoning) {
-        body.appendChild(h('details', { class: 'disclosure crit__reasoning' },
-          h('summary', null, icon('chevronRight'), t('crit.reasoning')),
-          h('div', { class: 'disclosure__body t-caption1 subtle pre-wrap' }, cr.reasoning)));
-      }
+      // апелляция
+      if (cr.appeal_id) body.appendChild(this.appealBox(cr, d));
 
-      // ---- апелляция
-      var foot = h('div', { class: 'crit__foot' });
-      var ap = d.appeal;
-      if (cr.appeal_id) {
-        var st = cr.appeal_status || (ap && ap.status);
-        var box = h('div', { class: 'crit__appeal crit__appeal--' + (st || 'open') },
-          h('div', { class: 'row' },
-            icon('scale', 'icon--16'),
-            h('a', { href: '#/appeals/' + cr.appeal_id }, t('crit.appealN', { id: cr.appeal_id })),
-            CQA.ui.badge(CQA.i18n.tx('appealStatus.' + (st || 'open'), st || 'open'), st === 'decided' ? 'success' : 'warning')));
-        if (ap && ap.decision) {
-          var dec = ap.decision;
-          box.appendChild(h('div', { class: 'crit__decision t-caption1' },
-            h('div', null, h('span', { class: 'muted' }, t('decision.original') + ': '), CQA.verdict(ap.original ? ap.original.verdict : cr.verdict, cr.type, d.top)),
-            h('div', null, h('span', { class: 'muted' }, t('decision.label') + ': '),
-              dec.action === 'change' ? [t('decision.changeTo') + ' ', CQA.verdict(dec.new_verdict, cr.type, d.top)] : t('decision.confirmed')),
-            dec.reason ? h('div', null, h('span', { class: 'muted' }, t('decision.reason') + ': '), dec.reason) : null));
-        }
-        foot.appendChild(box);
-      } else if (d.canAppeal !== false && cr.status !== 'failed') {
-        foot.appendChild(h('button', { class: 'btn btn--small crit__dispute', type: 'button',
+      // действия
+      var actions = h('div', { class: 'crow__actions' });
+      if (!cr.appeal_id && d.canAppeal !== false && cr.status !== 'failed' && verdict != null) {
+        actions.appendChild(h('button', { class: 'btn btn--small' + (violation ? ' btn--primary' : ''), type: 'button',
           onClick: function () { fire(self, 'cqa-appeal', { cid: cr.criterion_id }); } }, icon('scale'), t('crit.dispute')));
       }
-      if (d.trainUid && cr.status !== 'failed' && CQA.isViolation && CQA.isViolation(verdict, cr.type, d.top)) {
-        foot.appendChild(h('a', { class: 'btn btn--small crit__train', href: CQA.trainHref(d.trainUid, { focus: [cr.criterion_id], operator: d.trainOperator }),
-          title: t('crit.trainTitle', { id: cr.criterion_id }) }, CQA.icon('target'), t('crit.train')));
+      if (d.trainUid && cr.status !== 'failed' && violation && !isFlag) {
+        actions.appendChild(h('a', { class: 'btn btn--small', href: CQA.trainHref(d.trainUid, { focus: [cr.criterion_id], operator: d.trainOperator }),
+          'data-tip': d.trainSelf ? t('crit.trainTitle', { id: cr.criterion_id }) : t('crit.assignTitle', { id: cr.criterion_id }) },
+          icon('target'), d.trainSelf ? t('crit.train') : t('crit.assign')));
       }
-      if (foot.childNodes.length) body.appendChild(foot);
+      if (d.canEdit) {
+        actions.appendChild(h('span', { class: 'spacer' }));
+        actions.appendChild(h('a', { class: 'btn btn--subtle btn--small crow__edit', href: CQA.navHref('checklist') + '?crit=' + encodeURIComponent(cr.criterion_id),
+          'data-tip': t('crit.editTitle') }, icon('edit'), t('crit.edit')));
+      }
+      if (actions.childNodes.length) body.appendChild(actions);
+
+      // служебное: ход рассуждения и проверенный участок
+      var r = cr.checked_range && cr.checked_range.length === 2 && cr.checked_range[0] ? cr.checked_range : null;
+      if (cr.reasoning || r) {
+        body.appendChild(h('details', { class: 'disclosure crow__more' },
+          h('summary', null, icon('chevronRight'), t('crit.reasoning')),
+          h('div', { class: 'disclosure__body stack' },
+            r ? h('div', { class: 'row t-caption1' }, h('span', { class: 'muted' }, t('crit.checkedRange')),
+              h('button', { class: 'btn btn--link t-caption1', type: 'button', onClick: function () { fire(self, 'cqa-range', { cid: cr.criterion_id, range: r }); } },
+                r[0] === r[1] ? r[0] : r[0] + '–' + r[1])) : null,
+            cr.reasoning ? h('div', { class: 't-caption1 subtle pre-wrap' }, cr.reasoning) : null)));
+      }
       this.selected = d.selected;
     }
+
+    appealBox(cr, d) {
+      var ap = d.appeal;
+      var st = cr.appeal_status || (ap && ap.status) || 'open';
+      var box = h('div', { class: 'crow__appeal crow__appeal--' + st },
+        h('div', { class: 'row' },
+          icon('scale', 'icon--16'),
+          h('b', null, st === 'decided' ? t('crit.appealDecided') : t('crit.appealOpen')),
+          h('a', { href: '#/appeals/' + cr.appeal_id }, t('crit.appealN', { id: cr.appeal_id }))));
+      if (ap && ap.decision) {
+        var dec = ap.decision;
+        box.appendChild(h('div', { class: 'crow__decision t-caption1' },
+          h('div', { class: 'row' }, h('span', { class: 'muted' }, t('decision.label') + ':'),
+            dec.action === 'change' ? [t('decision.changeTo'), CQA.verdict(dec.new_verdict, cr.type, d.top)] : t('decision.confirmed')),
+          dec.reason ? h('div', null, h('span', { class: 'muted' }, t('decision.reason') + ': '), dec.reason) : null));
+      } else if (st !== 'decided') {
+        box.appendChild(h('div', { class: 't-caption1 muted' }, t('crit.appealWaiting')));
+      }
+      return box;
+    }
   }
+
+  function cap(s) { s = String(s || ''); return s.charAt(0).toUpperCase() + s.slice(1); }
+
+  /** Объяснение без повторов: «Эмпатия … — Нет.» в начале и «Основание — m13.» в конце уже видны в строке и в цитатах. */
+  function cleanExplanation(text, title) {
+    var s = String(text || '').trim();
+    if (!s) return '';
+    var esc = String(title || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    if (esc) s = s.replace(new RegExp('^' + esc + '\\s*[—–-]\\s*[^.]{1,24}\\.\\s*', 'i'), '');
+    s = s.replace(/\s*Основани[ея]\s*[—–:-]\s*m\d+(?:\s*[,–-]\s*m\d+)*\.?\s*$/i, '');
+    return s ? s.charAt(0).toUpperCase() + s.slice(1) : String(text || '').trim();
+  }
+  CQA.cleanExplanation = cleanExplanation;
 
   customElements.define('cqa-criterion', CqaCriterion);
 })(window.CQA = window.CQA || {});

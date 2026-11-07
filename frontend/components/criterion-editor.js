@@ -147,31 +147,36 @@
       var crossSwitch = h('input', { type: 'checkbox', checked: !!c.cross_check });
       crossSwitch.addEventListener('change', function () { c.cross_check = crossSwitch.checked; self.changed(false); });
 
-      var grid = h('div', { class: 'ced__grid' },
-        this.field(t('field.id'), this.input('id', { mono: true }), { loc: this.loc('id'), required: true, cls: 'ced__f-id' }),
+      // главное: название, вес, определение, примеры; остальное — в «Ещё настройки»
+      var grid = h('div', { class: 'ced__grid ced__grid--main' },
         this.field(t('field.title'), this.input('title'), { loc: this.loc('title'), required: true, cls: 'ced__f-title' }),
-        this.field(t('field.section'), sectionSel, { loc: this.loc('section'), cls: 'ced__f-section' }),
         this.field(t('field.type'), typeSel, { loc: this.loc('type'), cls: 'ced__f-type' }),
         this.field(t('field.weight'), this.input('weight', { num: true, disabled: c.type === 'flag' }), { loc: this.loc('weight'), hint: c.type === 'flag' ? t('ced.flagWeightHint') : null, cls: 'ced__f-weight' }));
       body.appendChild(grid);
-
-      body.appendChild(h('div', { class: 'row ced__switches' },
-        h('label', { class: 'switch' }, naSwitch, t('field.na_allowed')),
-        h('label', { class: 'switch' }, crossSwitch, t('field.cross_check'))));
-
-      if (c.na_allowed) body.appendChild(this.field(t('field.na_condition'), this.input('na_condition', { multiline: true, rows: 2, nullable: true }), { loc: this.loc('na_condition'), hint: t('ced.naHint') }));
-
+      body.appendChild(this.field(t('field.definition'), this.input('definition', { multiline: true, rows: 4 }), { loc: this.loc('definition'), required: true, hint: t('ced.definitionHint') }));
       if (c.type === 'scale') body.appendChild(this.scaleEditor());
       if (c.type === 'flag') {
         var cats = h('input', { class: 'input', value: (c.flag_categories || []).join(', '), placeholder: t('ced.categoriesPlaceholder') });
         cats.addEventListener('input', function () { c.flag_categories = cats.value.split(',').map(function (x) { return x.trim(); }).filter(Boolean); self.clearError(cats); self.changed(false); });
         body.appendChild(this.field(t('field.flag_categories'), cats, { loc: this.loc('flag_categories'), hint: t('ced.categoriesHint') }));
       }
+      body.appendChild(this.examplesEditor());
 
-      body.appendChild(this.field(t('field.definition'), this.input('definition', { multiline: true, rows: 3 }), { loc: this.loc('definition'), required: true, hint: t('ced.definitionHint') }));
+      var more = h('details', { class: 'disclosure ced__more', open: this._moreOpen || null });
+      more.addEventListener('toggle', function () { self._moreOpen = more.open; });
+      var moreBody = h('div', { class: 'disclosure__body stack stack--l' });
+      more.append(h('summary', null, icon('chevronRight'), t('ced.more')), moreBody);
+      body.appendChild(more);
+      body = moreBody;
+      body.appendChild(h('div', { class: 'ced__grid ced__grid--more' },
+        this.field(t('field.id'), this.input('id', { mono: true }), { loc: this.loc('id'), required: true, cls: 'ced__f-id' }),
+        this.field(t('field.section'), sectionSel, { loc: this.loc('section'), cls: 'ced__f-section' })));
+      body.appendChild(h('div', { class: 'row ced__switches' },
+        h('label', { class: 'switch' }, naSwitch, t('field.na_allowed')),
+        h('label', { class: 'switch' }, crossSwitch, t('field.cross_check'))));
+      if (c.na_allowed) body.appendChild(this.field(t('field.na_condition'), this.input('na_condition', { multiline: true, rows: 2, nullable: true }), { loc: this.loc('na_condition'), hint: t('ced.naHint') }));
       body.appendChild(this.field(t('field.check_steps'), this.input('check_steps', { multiline: true, rows: 3, lines: true }), { loc: this.loc('check_steps'), hint: t('ced.linesHint') }));
       body.appendChild(this.field(t('field.interpretations'), this.input('interpretations', { multiline: true, rows: 3, lines: true }), { loc: this.loc('interpretations'), hint: t('ced.linesHint') }));
-      body.appendChild(this.examplesEditor());
 
       // роли доказательств и каналы
       var roles = h('div', { class: 'row', role: 'group' }, ROLES.map(function (r) {
@@ -293,6 +298,8 @@
         if (box) CQA.dom.replace(box, icon('error'), e.msg);
         var ctl = f.querySelector('input, select, textarea');
         if (ctl) ctl.setAttribute('aria-invalid', 'true');
+        var more = f.closest('details');
+        if (more) { more.open = true; self._moreOpen = true; }
       });
       this.head.classList.add('has-error');
     }
