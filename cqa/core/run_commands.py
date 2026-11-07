@@ -58,6 +58,7 @@ def register(app: typer.Typer) -> None:
         concurrency: int = typer.Option(None, help="Диалогов параллельно"),
         frozen: bool = typer.Option(False, help="Использовать замороженную версию и профиль"),
         cross_check: bool = typer.Option(False, help="Перекрёстная проверка критериев с cross_check: true"),
+        experiment: bool = typer.Option(False, help="Эксперимент: не менять текущие оценки диалогов"),
     ):
         """Прогон оценки по группе → экспорт CSV → метрики на эталоне."""
         from cqa.core.runner import create_run, run_sync
@@ -90,7 +91,8 @@ def register(app: typer.Typer) -> None:
         crit_list = [c.strip() for c in criteria.split(",")] if criteria else None
         t0 = time.time()
         run_id = create_run(con, uids=uids, version_id=vid, profile_name=profile, criteria=crit_list,
-                            force=force, kind="gold" if gold else "batch", cross_check=cross_check)
+                            force=force, kind="experiment" if experiment else ("gold" if gold else "batch"),
+                            cross_check=cross_check)
         typer.echo(f"run {run_id}: {len(uids)} диалогов, профиль {profile}, версия чек-листа {vid}")
         r = run_sync(con, run_id, concurrency)
         dt = time.time() - t0
@@ -99,7 +101,7 @@ def register(app: typer.Typer) -> None:
         out_dir = ROOT / "eval" / "runs"
         out_dir.mkdir(parents=True, exist_ok=True)
         out = out_dir / f"{group}-{profile}-v{vid}-{r['prompt_version']}.csv"
-        out.write_text(export_csv(con, group), encoding="utf-8")
+        out.write_text(export_csv(con, group, run_id=run_id), encoding="utf-8")
         typer.echo(f"экспорт: {out.relative_to(ROOT)}")
         if gold:
             args = [sys.executable, str(ROOT / "eval" / "compare.py"), str(gold), str(out), "--traps"]

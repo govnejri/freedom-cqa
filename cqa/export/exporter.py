@@ -18,13 +18,21 @@ def _cfg_for(con, version_id: int) -> ChecklistConfig:
     return get_version(con, version_id)[0]
 
 
-def _rows(con: sqlite3.Connection, group: str | None, final: bool):
-    q = ("SELECT c.uid, c.external_id, c.language, c.channel, e.* FROM conversations c"
-         " JOIN evaluations e ON e.id = c.current_evaluation_id")
-    args: tuple = ()
-    if group:
-        q += " WHERE c.group_id=?"
-        args = (group,)
+def _rows(con: sqlite3.Connection, group: str | None, final: bool, run_id: int | None = None):
+    if run_id is not None:   # оценки конкретного прогона (эксперименты, пробный прогон)
+        q = ("SELECT c.uid, c.external_id, c.language, c.channel, e.* FROM evaluations e"
+             " JOIN conversations c ON c.uid = e.uid WHERE e.run_id=?")
+        args: tuple = (run_id,)
+        if group:
+            q += " AND c.group_id=?"
+            args += (group,)
+    else:
+        q = ("SELECT c.uid, c.external_id, c.language, c.channel, e.* FROM conversations c"
+             " JOIN evaluations e ON e.id = c.current_evaluation_id")
+        args = ()
+        if group:
+            q += " WHERE c.group_id=?"
+            args = (group,)
     q += " ORDER BY c.external_id"
     for ev in con.execute(q, args).fetchall():
         crs = {r["criterion_id"]: dict(r) for r in con.execute(
@@ -39,9 +47,9 @@ def _rows(con: sqlite3.Connection, group: str | None, final: bool):
         yield ev, crs
 
 
-def export_csv(con: sqlite3.Connection, group: str | None = None, final: bool = False) -> str:
+def export_csv(con: sqlite3.Connection, group: str | None = None, final: bool = False, run_id: int | None = None) -> str:
     out = io.StringIO()
-    rows = list(_rows(con, group, final))
+    rows = list(_rows(con, group, final, run_id))
     crit_ids: list[str] = []
     for ev, _ in rows:
         for c in _cfg_for(con, ev["checklist_version_id"]).enabled_criteria():

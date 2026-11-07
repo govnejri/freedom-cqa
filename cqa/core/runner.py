@@ -21,6 +21,9 @@ from cqa.settings import get_profile
 
 log = logging.getLogger(__name__)
 
+# Прогоны, которые не меняют текущую оценку диалога (conversations.current_evaluation_id).
+SANDBOX_KINDS = ("dry_run", "experiment")
+
 
 def _prompt_version() -> str:
     try:
@@ -274,12 +277,15 @@ def finalize_evaluation(con, eval_id: int, cfg: ChecklistConfig, channel: str | 
             (res.total, res.model_dump_json(), int(res.gross), json.dumps(res.gross_categories, ensure_ascii=False),
              int(review > 0), agg["cost"], agg["lat"], now_iso(), eval_id),
         )
-        uid = con.execute("SELECT uid FROM evaluations WHERE id=?", (eval_id,)).fetchone()["uid"]
-        prev = con.execute("SELECT current_evaluation_id FROM conversations WHERE uid=?", (uid,)).fetchone()
-        prev_eval = prev["current_evaluation_id"] if prev else None
-        con.execute("UPDATE conversations SET current_evaluation_id=? WHERE uid=?", (eval_id, uid))
-        if prev_eval and prev_eval != eval_id:
-            _carry_over_decisions(con, prev_eval, eval_id)
+        row = con.execute("SELECT e.uid, r.kind FROM evaluations e LEFT JOIN runs r ON r.id=e.run_id WHERE e.id=?",
+                          (eval_id,)).fetchone()
+        uid = row["uid"]
+        if (row["kind"] or "batch") not in SANDBOX_KINDS:   # пробный прогон и эксперименты не трогают текущую оценку
+            prev = con.execute("SELECT current_evaluation_id FROM conversations WHERE uid=?", (uid,)).fetchone()
+            prev_eval = prev["current_evaluation_id"] if prev else None
+            con.execute("UPDATE conversations SET current_evaluation_id=? WHERE uid=?", (eval_id, uid))
+            if prev_eval and prev_eval != eval_id:
+                _carry_over_decisions(con, prev_eval, eval_id)
     recompute_final(con, eval_id, cfg, channel=channel)
 
 
