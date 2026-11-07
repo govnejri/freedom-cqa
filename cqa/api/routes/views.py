@@ -138,8 +138,10 @@ def criterion_dtos(con: sqlite3.Connection, ev: sqlite3.Row, cfg: ChecklistConfi
         try:
             crit = cfg.criterion(cid)
             title, section, ctype, weight = crit.title, crit.section, crit.type, float(crit.weight)
+            allowed, top = crit.allowed_verdicts(), crit.top
         except KeyError:
             title, section, ctype, weight = cid, "", "yes_no", float(r["weight"] or 0)
+            allowed, top = [], None
         rng = _loads(r["checked_range_json"])
         appeal = appeals.get(cid)
         out.append(CriterionResultDTO(
@@ -152,6 +154,7 @@ def criterion_dtos(con: sqlite3.Connection, ev: sqlite3.Row, cfg: ChecklistConfi
             needs_review=bool(r["needs_review"]), second_opinion=_loads(r["second_json"]),
             status=r["status"], error=_safe(r["error"]),
             appeal_id=appeal[0] if appeal else None, appeal_status=appeal[1] if appeal else None,
+            allowed_verdicts=allowed, scale_top=top,
         ))
     return out
 

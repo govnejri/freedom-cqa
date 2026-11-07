@@ -77,6 +77,8 @@ class CriterionResultDTO(BaseModel):
     error: str | None = None
     appeal_id: int | None = None
     appeal_status: str | None = None
+    allowed_verdicts: list[str] = Field(default_factory=list)   # допустимые вердикты критерия (для апелляции)
+    scale_top: int | None = None                                 # верхняя ступень шкалы («15 из 20»)
 
 
 class EvaluationDTO(BaseModel):
@@ -174,7 +176,7 @@ class AppealDTO(BaseModel):
     status: str
     created_at: str
     original: CriterionResultDTO
-    fragment: list[MessageDTO] = Field(default_factory=list)   # доказательства/проверенный участок ±3 реплики
+    fragment: list[MessageDTO] = Field(default_factory=list)   # доказательства/проверенный участок ±2 реплики
     ai_opinion: dict[str, Any] | None = None
     decision: dict[str, Any] | None = None
     prev_final_total: float | None = None
