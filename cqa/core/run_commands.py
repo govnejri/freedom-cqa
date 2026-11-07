@@ -57,6 +57,7 @@ def register(app: typer.Typer) -> None:
         limit: int = typer.Option(0, help="Только первые N диалогов"),
         concurrency: int = typer.Option(None, help="Диалогов параллельно"),
         frozen: bool = typer.Option(False, help="Использовать замороженную версию и профиль"),
+        cross_check: bool = typer.Option(False, help="Перекрёстная проверка критериев с cross_check: true"),
     ):
         """Прогон оценки по группе → экспорт CSV → метрики на эталоне."""
         from cqa.core.runner import create_run, run_sync
@@ -89,7 +90,7 @@ def register(app: typer.Typer) -> None:
         crit_list = [c.strip() for c in criteria.split(",")] if criteria else None
         t0 = time.time()
         run_id = create_run(con, uids=uids, version_id=vid, profile_name=profile, criteria=crit_list,
-                            force=force, kind="gold" if gold else "batch")
+                            force=force, kind="gold" if gold else "batch", cross_check=cross_check)
         typer.echo(f"run {run_id}: {len(uids)} диалогов, профиль {profile}, версия чек-листа {vid}")
         r = run_sync(con, run_id, concurrency)
         dt = time.time() - t0

@@ -171,6 +171,14 @@ async def process_run(con: sqlite3.Connection, run_id: int, conv_concurrency: in
                     await asyncio.sleep(2.0)            # кэш Gemini появляется не сразу (замер: параллельно cached=0)
                 await asyncio.gather(*(judge_row(conv, r) for r in rows[1:]))
             finalize_evaluation(con, ev["id"], cfg, channel=conv.channel)
+            if params.get("cross_check") and not _cancelled(con, run_id):
+                # перекрёстная проверка — только по явному флагу: на DEV 3.7 Flash повторяет ошибки 3.8 Flash
+                # (согласие 99.4%), поэтому по умолчанию только страховка для критериев с cross_check: true
+                from cqa.core.crosscheck import cross_check_evaluation
+                try:
+                    await cross_check_evaluation(con, ev["id"])
+                except Exception:  # noqa: BLE001
+                    log.exception("cross-check failed: %s", ev["uid"])
 
     await asyncio.gather(*(one(ev) for ev in evals))
 
