@@ -74,7 +74,7 @@ def changed_criteria(con: sqlite3.Connection, cfg: ChecklistConfig, meta: dict[s
 def current_group(con: sqlite3.Connection) -> str | None:
     """Последний загруженный набор с диалогами (кроме автотестов)."""
     r = con.execute(
-        "SELECT d.group_id FROM datasets d WHERE d.source != 'autotest' AND d.group_id != ?"
+        "SELECT d.group_id FROM datasets d WHERE d.source NOT IN ('autotest', 'trainer') AND d.group_id != ?"
         " AND EXISTS (SELECT 1 FROM conversations c WHERE c.group_id = d.group_id)"
         " ORDER BY d.fetched_at DESC, d.group_id LIMIT 1", (AUTOTEST_GROUP,)).fetchone()
     return r["group_id"] if r else None
