@@ -1,5 +1,6 @@
 # Профили LLM и роли. Ключи — только из .env (api_key_env).
 # Цены — USD за 1M токенов; null = неизвестно (стоимость помечается как оценка).
+# Gemini 3.8 Flash: $0.75 вход / $0.075 кэш / $3.75 выход (с 01.01.2027 вдвое дороже). Gemma 4 по API — бесплатно.
 # Проверено 2026-11-07: gemini-3.8-flash и gemini-4-argon отвечают по схеме с propertyOrdering;
 # gemini-3.1-pro-preview требует api_version v1beta; gemma-4 не принимает thinking_level.
 
@@ -12,7 +13,7 @@ profiles:
     max_output_tokens: 8192
     max_concurrency: 8
     rpm: 300
-    price: {input: null, cached_input: null, output: null}
+    price: {input: 0.75, cached_input: 0.075, output: 3.75}   # aistudio.google.com/docs/pricing, до 31.12.2026
   gemini-flash-high:            # «сильная» роль без дорогих моделей: та же Flash с глубоким рассуждением
     provider: gemini
     model: gemini-3.8-flash
@@ -21,7 +22,7 @@ profiles:
     max_output_tokens: 16384
     max_concurrency: 6
     rpm: 300
-    price: {input: null, cached_input: null, output: null}
+    price: {input: 0.75, cached_input: 0.075, output: 3.75}
   gemini-flash-37:
     provider: gemini
     model: gemini-3.7-flash
