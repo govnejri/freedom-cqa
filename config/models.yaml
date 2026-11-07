@@ -13,6 +13,7 @@ profiles:
     max_output_tokens: 8192
     max_concurrency: 8
     rpm: 300
+    timeout_sec: 40
     price: {input: 0.75, cached_input: 0.075, output: 3.75}   # aistudio.google.com/docs/pricing, до 31.12.2026
   gemini-flash-high:            # «сильная» роль без дорогих моделей: та же Flash с глубоким рассуждением
     provider: gemini
@@ -22,6 +23,7 @@ profiles:
     max_output_tokens: 16384
     max_concurrency: 6
     rpm: 300
+    timeout_sec: 120
     price: {input: 0.75, cached_input: 0.075, output: 3.75}
   gemini-flash-37:
     provider: gemini
@@ -31,6 +33,7 @@ profiles:
     max_output_tokens: 8192
     max_concurrency: 8
     rpm: 300
+    timeout_sec: 40
     price: {input: 0.75, cached_input: 0.075, output: 3.75}   # цены 3.7 на странице нет — оценка по 3.8
   # gemini-4-argon не используем: слишком дорогой (решение пользователя 2026-11-07)
   gemini-pro31:
@@ -42,6 +45,7 @@ profiles:
     max_output_tokens: 8192
     max_concurrency: 4
     rpm: 60
+    timeout_sec: 120
     price: {input: null, cached_input: null, output: null}
   gemma-api:
     provider: gemini
@@ -51,6 +55,7 @@ profiles:
     max_output_tokens: 4096
     max_concurrency: 4
     rpm: 30
+    timeout_sec: 90
     price: {input: 0.0, cached_input: 0.0, output: 0.0}
   local:
     provider: openai_compat
@@ -61,6 +66,7 @@ profiles:
     max_output_tokens: 2048
     max_concurrency: 1
     rpm: 600
+    timeout_sec: 240
     price: {input: 0.0, cached_input: 0.0, output: 0.0}
   fake:
     provider: fake

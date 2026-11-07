@@ -163,7 +163,7 @@ async def complete(
         try:
             async with limiter.slot():
                 t0 = time.monotonic()
-                resp = await asyncio.wait_for(provider.complete(cur, profile), TIMEOUT_SEC)
+                resp = await asyncio.wait_for(provider.complete(cur, profile), profile.timeout_sec or TIMEOUT_SEC)
         except TransportError as e:
             err = e
         except TimeoutError:

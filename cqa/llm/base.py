@@ -53,6 +53,7 @@ class Profile(BaseModel):
     max_output_tokens: int = 8192
     max_concurrency: int = 4
     rpm: int = 60
+    timeout_sec: float | None = None   # таймаут одного вызова (зависший вызов обрывается и повторяется)
     price: dict[str, float | None] = Field(default_factory=dict)
 
 
