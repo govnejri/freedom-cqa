@@ -33,6 +33,8 @@ def _rows(con: sqlite3.Connection, group: str | None, final: bool, run_id: int |
         if group:
             q += " WHERE c.group_id=?"
             args = (group,)
+        else:
+            q += " WHERE c.parent_uid IS NULL"
     q += " ORDER BY c.external_id"
     for ev in con.execute(q, args).fetchall():
         crs = {r["criterion_id"]: dict(r) for r in con.execute(

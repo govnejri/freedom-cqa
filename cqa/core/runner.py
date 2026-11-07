@@ -22,7 +22,7 @@ from cqa.settings import get_profile
 log = logging.getLogger(__name__)
 
 # Прогоны, которые не меняют текущую оценку диалога (conversations.current_evaluation_id).
-SANDBOX_KINDS = ("dry_run", "experiment")
+SANDBOX_KINDS = ("dry_run", "experiment", "autotest")
 
 
 def _prompt_version() -> str:

@@ -59,6 +59,8 @@ async def list_conversations(
     if group:
         where.append("c.group_id = ?")
         args.append(group)
+    else:
+        where.append("c.parent_uid IS NULL")   # мутанты автотестов видны только при group=AUTOTEST
     if lang:
         where.append("upper(c.language) = upper(?)")
         args.append(lang)
