@@ -1,25 +1,82 @@
-# CQA — Conversation Quality Analytics (Freedom Broker Hackathon)
+# CQA — Conversation Quality Analytics
 
-Прототип автоматической оценки чатов и звонков операторов по настраиваемому чек-листу:
-оценка с репликами-доказательствами, апелляция и пересмотр, редактор чек-листа.
+Прототип для хакатона Freedom Broker. Система оценивает чаты и звонки операторов по настраиваемому чек-листу:
+- у каждой оценки — реплика-доказательство;
+- оценку можно оспорить, проверяющий принимает решение;
+- критерий можно изменить в интерфейсе и применить к диалогам.
 
-- **План проекта: [docs/plan.md](docs/plan.md)**
-- Ядро оценки: [docs/core-eval.md](docs/core-eval.md)
-- Эталон и сравнение разметок: [eval/](eval/)
-- Задание: [docs/task.txt](docs/task.txt)
-- Чек-лист: [docs/checklist.txt](docs/checklist.txt), [PDF](docs/CQA_Chat_Quality_Checklist%201.pdf)
-- Концепция: [CQA Freedom Broker — концепция проекта.md](CQA%20Freedom%20Broker%20—%20концепция%20проекта.md)
+- План проекта: [docs/plan.md](docs/plan.md)
+- Ядро оценки (подход, трактовки, качество): [docs/core-eval.md](docs/core-eval.md)
+- Спецификация реализации: [docs/implementation.md](docs/implementation.md)
+- Задание и чек-лист организаторов: [docs/task.txt](docs/task.txt), [docs/checklist.txt](docs/checklist.txt)
 
-## Данные
+## Быстрый старт
+
+Нужны Python 3.12 и [uv](https://docs.astral.sh/uv/). `ffmpeg` нужен, только чтобы сверять длительность аудио.
 
 ```bash
-cp .env.example .env   # вставить ссылку API из гайда
-set -a; . ./.env; set +a
-mkdir -p data && curl -sS "${CQA_API_URL}&group_id=${CQA_GROUP_ID}" -o data/dev.json
+uv sync
+cp .env.example .env        # вписать CQA_API_URL (ссылка из гайда) и GEMINI_API_KEY
+uv run cqa load --group DEV # загрузить набор из API организаторов (mp3 звонков скачиваются сразу)
+uv run cqa serve            # http://127.0.0.1:8000 — интерфейс и API
 ```
 
-`data/` и `.env` в git не попадают: ссылка API и каждый `audio_url` содержат подпись `sig=`.
+Без ключей и сети:
 
-## Запуск
+```bash
+uv run cqa serve --fake     # детерминированная «модель» для демо интерфейса
+uv run cqa ui-preview       # только фронтенд на мок-данных: http://127.0.0.1:8090/?mock=1
+```
 
-_TBD_
+## Оценка и точность
+
+```bash
+uv run cqa eval --group DEV --gold eval/gold.csv              # прогон → экспорт → метрики на эталоне
+uv run cqa eval --group DEV --gold eval/gold.csv --split holdout
+uv run cqa evaluate DEV:p1-ru-022                             # один диалог, вердикты в консоль
+uv run cqa export --group DEV --format csv --out results.csv  # для сверки с эталоном
+uv run cqa log --last                                         # журнал вызовов модели
+```
+
+- **Модель** — Gemini 3.8 Flash (`config/models.yaml`). Один вызов на критерий; всё остальное делает код: подготовка диалога, проверка цитат, подсчёт баллов.
+- **Стоимость** одной оценки диалога со всеми вызовами — около **$0.024** (Gemini 3.8 Flash: $0.75 / $3.75 за 1M входных и выходных токенов).
+- **Точность на DEV** против эталона из двух независимых разметок — на уровне согласия разметчиков между собой. Таблица — в `docs/core-eval.md` §5.
+
+## Контрольный этап
+
+```bash
+uv run cqa freeze                                   # зафиксировать версию чек-листа и модель
+uv run cqa load --group <CONTROL_GROUP_ID>
+uv run cqa eval --group <CONTROL_GROUP_ID> --frozen
+uv run cqa export --group <CONTROL_GROUP_ID> --format csv --out control.csv
+```
+
+**Замена критерия:** в интерфейсе «Чек-лист» → изменить или добавить критерий → «Сохранить как новую версию» → «Сделать активной» → «Применить к диалогам». Пересчитывается только изменённый критерий, остальное берётся из кэша.
+
+## Устройство
+
+| Каталог | Что внутри |
+| --- | --- |
+| `cqa/ingest` | загрузка из API, нормализация (участки, удержание, паузы записи, события), факты, аудио |
+| `cqa/checklist` | чек-лист: YAML ⇄ версии в БД, diff |
+| `cqa/core` | промпт, судья по критерию, проверка цитат, скоринг, пакетный прогон |
+| `cqa/llm` | шлюз к моделям (кэш, повторы, лимиты, журнал, стоимость): Gemini, OpenAI-совместимый (локальная модель), fake |
+| `cqa/api`, `cqa/appeals` | REST API, апелляции, фоновый воркер |
+| `cqa/quality` | метрики на эталоне, автотесты судьи |
+| `frontend/` | интерфейс: vanilla JS + web components, сборка в один HTML (`cqa build-ui`) для web resource Dynamics 365 |
+| `eval/` | эталон DEV (`gold.csv`), отложенные семьи сценариев, сравнение разметок |
+
+**Встраивание в Dynamics 365:** `build/cqa.html` загружается как web resource, адрес API передаётся параметром `data={"apiBase":"https://…"}`.
+
+## Секреты
+
+Ссылка API и `audio_url` содержат подпись `sig=`, а `.env` — ключ модели. Поэтому:
+- `.env` и `data/` в git не попадают;
+- pre-commit хук (`.githooks/`) блокирует коммит с подписью или ключом;
+- аудио отдаётся только через бэкенд, ссылки организаторов наружу не выходят.
+
+## Тесты
+
+```bash
+uv run pytest -q
+```
