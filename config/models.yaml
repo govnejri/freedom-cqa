@@ -1,0 +1,65 @@
+# Профили LLM и роли. Ключи — только из .env (api_key_env).
+# Цены — USD за 1M токенов; null = неизвестно (стоимость помечается как оценка).
+# Проверено 2026-11-07: gemini-3.8-flash и gemini-4-argon отвечают по схеме с propertyOrdering;
+# gemini-3.1-pro-preview требует api_version v1beta; gemma-4 не принимает thinking_level.
+
+profiles:
+  gemini-flash:
+    provider: gemini
+    model: gemini-3.8-flash
+    api_key_env: GEMINI_API_KEY
+    thinking_level: low
+    max_output_tokens: 8192
+    max_concurrency: 8
+    rpm: 300
+    price: {input: null, cached_input: null, output: null}
+  gemini-argon:
+    provider: gemini
+    model: gemini-4-argon
+    api_key_env: GEMINI_API_KEY
+    thinking_level: low
+    max_output_tokens: 8192
+    max_concurrency: 6
+    rpm: 150
+    price: {input: 2.0, cached_input: 0.1, output: 10.0}
+  gemini-pro31:
+    provider: gemini
+    model: gemini-3.1-pro-preview
+    api_version: v1beta
+    api_key_env: GEMINI_API_KEY
+    thinking_level: low
+    max_output_tokens: 8192
+    max_concurrency: 4
+    rpm: 60
+    price: {input: null, cached_input: null, output: null}
+  gemma-api:
+    provider: gemini
+    model: gemma-4-26b-a4b-it
+    api_key_env: GEMINI_API_KEY
+    thinking_level: null
+    max_output_tokens: 4096
+    max_concurrency: 4
+    rpm: 30
+    price: {input: 0.0, cached_input: 0.0, output: 0.0}
+  local:
+    provider: openai_compat
+    base_url_env: LOCAL_LLM_BASE_URL     # например http://home:11434/v1 (Ollama) или http://home:8080/v1 (llama.cpp)
+    model: gemma4                        # имя модели на локальном сервере
+    api_key_env: null
+    json_mode: json_schema               # json_schema | json_object | none
+    max_output_tokens: 2048
+    max_concurrency: 1
+    rpm: 600
+    price: {input: 0.0, cached_input: 0.0, output: 0.0}
+  fake:
+    provider: fake
+    model: fake
+    max_concurrency: 16
+    rpm: 100000
+    price: {input: 0.0, cached_input: 0.0, output: 0.0}
+
+roles:
+  judge: gemini-flash          # оценка критериев
+  strong: gemini-argon         # второе мнение, конструктор критерия, тренажёр, тьютор
+  cross_check: gemini-argon    # перекрёстная проверка
+  signals: gemini-flash        # причина обращения, вопросы без ответа

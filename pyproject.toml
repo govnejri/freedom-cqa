@@ -1,0 +1,37 @@
+[project]
+name = "cqa"
+version = "0.1.0"
+description = "Conversation Quality Analytics — автоматическая оценка диалогов поддержки по чек-листу"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
+    "pydantic>=2.8",
+    "pydantic-settings>=2.4",
+    "google-genai>=1.0",
+    "openai>=1.40",
+    "httpx>=0.27",
+    "pyyaml>=6.0",
+    "jinja2>=3.1",
+    "rapidfuzz>=3.9",
+    "typer>=0.12",
+    "python-multipart>=0.0.9",
+]
+
+[project.scripts]
+cqa = "cqa.cli:app"
+
+[dependency-groups]
+dev = ["pytest>=8.0", "pytest-asyncio>=0.23"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["cqa"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+filterwarnings = ["ignore::SyntaxWarning", "ignore::DeprecationWarning"]

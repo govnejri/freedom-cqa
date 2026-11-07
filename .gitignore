@@ -28,3 +28,10 @@ dist/
 .DS_Store
 .idea/
 .vscode/
+
+# Артефакты приложения
+var/
+build/
+exports/
+eval/runs/
+eval/autotests/

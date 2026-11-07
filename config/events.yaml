@@ -1,0 +1,44 @@
+# Системные события → тип. Сравнение после нормализации: casefold, без конечной точки, схлопнутые пробелы.
+# exact — точное совпадение; regex — регулярное выражение по нормализованному тексту.
+# Незнакомый текст получает тип "unknown" и попадает в отчёт загрузки, разбор не падает.
+
+events:
+  escalated:
+    exact: ["Эскалация на оператора", "Чат операторға жіберілді", "Chat transferred to an agent"]
+  operator_joined:
+    exact: ["Агент присоединился к разговору с клиентом"]
+  transfer:
+    exact: ["Клиент переведен от агента на представителя службы поддержки"]
+  identity_verified:
+    exact: ["Личность клиента подтверждена", "Клиенттің жеке басы расталды", "Customer identity verified"]
+  operator_closed:
+    exact: ["Оператор закрыл чат", "Оператор чатты жапты", "Agent closed the chat"]
+  connection_lost:
+    exact: ["Соединение с клиентом прервано", "Клиентпен байланыс үзілді", "Connection to customer lost"]
+  client_left:
+    exact: ["Клиент покинул чат", "Клиент чаттан шықты", "Customer left the chat"]
+  client_ended_call:
+    exact: ["Клиент завершил разговор"]
+  hold_start:
+    exact: ["Клиент находится на удержании"]
+  hold_end:
+    exact: ["Клиент больше не находится на удержании"]
+  consult_initiated:
+    exact: ["Инициирована консультация с агентом"]
+  consult_started:
+    exact: ["Началась консультация с агентом"]
+  consult_agent_left:
+    exact: ["Агент вышел из разговора"]
+  recording_started:
+    exact: ["Запись и транскрибирование запущены", "Жазу және транскрипция басталды"]
+  recording_paused:
+    exact: ["Запись и транскрибирование приостановлены"]
+  recording_resumed:
+    exact: ["Запись и транскрибирование возобновлены"]
+  language_changed:
+    regex: ["dialog language changed", "transcription languages have been updated"]
+
+# События, которые завершают диалог (для факта ending и метки after_end).
+ending_types: [operator_closed, connection_lost, client_left, client_ended_call]
+# Завершение, при котором оператор не мог попрощаться (кандидаты в N/A для критерия «Завершение»).
+abrupt_ending_types: [connection_lost, client_left, client_ended_call]
