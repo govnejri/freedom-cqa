@@ -69,3 +69,4 @@ class CallContext(BaseModel):
     uid: str | None = None
     criterion_id: str | None = None
     attempt: int = 1
+    no_cache: bool = False            # True — не читать кэш (ответ всё равно записывается в кэш)

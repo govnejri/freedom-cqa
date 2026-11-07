@@ -1,0 +1,78 @@
+{
+  "error": "",
+  "isSuccess": true,
+  "data": {
+    "dataset_group_id": "MINI",
+    "total_records": 3,
+    "records": [
+      {
+        "conversation_id": "mini-ru-chat",
+        "channel": "agent chat",
+        "language": "RU",
+        "extra_field": "игнорируется",
+        "transcript": [
+          {"timestamp": "00:00", "speaker": "client", "text": "Подскажите, где посмотреть мой тариф?"},
+          {"timestamp": "00:02", "speaker": "bot", "text": "Здравствуйте! Я AIM, AI-ассистент. Чем помочь?"},
+          {"timestamp": "00:15", "speaker": "client", "text": "Соедините с оператором."},
+          {"timestamp": "00:16", "speaker": "bot", "text": "Пожалуйста, ожидайте. Оператор скоро подключится к чату."},
+          {"timestamp": "00:17", "speaker": "system", "text": "Эскалация на оператора."},
+          {"timestamp": "00:40", "speaker": "client", "text": "Смотрю в приложении."},
+          {"timestamp": "01:47", "speaker": "operator", "text": "Здравствуйте! Меня зовут Ольга. Сейчас проверю ваш тариф.", "attachments": []},
+          {"timestamp": "01:55", "speaker": "client", "text": "Хорошо, жду."},
+          {"timestamp": "02:05", "speaker": "system", "text": "Личность  клиента подтверждена"},
+          {"timestamp": "03:30", "speaker": "operator", "text": "Ваш тариф — «Стандарт», он указан в разделе «Профиль»."},
+          {"timestamp": "03:41", "speaker": "client", "text": "Спасибо!"},
+          {"timestamp": "03:41", "speaker": "client", "text": "Спасибо!"},
+          {"timestamp": "03:50", "speaker": "system", "text": "КЛИЕНТ ПОКИНУЛ ЧАТ."},
+          {"timestamp": "03:55", "speaker": "operator", "text": "Всего доброго!"}
+        ],
+        "audio_url": null
+      },
+      {
+        "conversation_id": "mini-kz-chat",
+        "channel": "agent chat",
+        "language": "KZ",
+        "transcript": [
+          {"timestamp": "00:00", "speaker": "client", "text": "Шотты қалай толтырамын?"},
+          {"timestamp": "00:01", "speaker": "bot", "text": "Сәлеметсіз бе! Мен AIM, жасанды интеллект көмекшісімін."},
+          {"timestamp": "00:20", "speaker": "client", "text": "Операторға қосыңызшы."},
+          {"timestamp": "00:22", "speaker": "system", "text": "Чат операторға жіберілді."},
+          {"timestamp": "01:00", "speaker": "operator", "text": "Сәлеметсіз бе, мен Айгүлмін. Қандай көмек керек?"},
+          {"timestamp": "01:10", "speaker": "client", "text": "Шотты толтыру керек."},
+          {"timestamp": "01:30", "speaker": "system", "text": "Клиенттің жеке басы расталды."},
+          {"timestamp": "01:40", "speaker": "operator", "text": "Мобильді қосымшада «Толтыру» бөлімін ашыңыз."},
+          {"timestamp": "02:00", "speaker": "client", "text": "Рақмет!"},
+          {"timestamp": "03:00", "speaker": "operator", "text": "Оқасы жоқ. Сау болыңыз!"},
+          {"timestamp": "03:05", "speaker": "system", "text": "Оператор чатты жапты."}
+        ],
+        "audio_url": null
+      },
+      {
+        "conversation_id": "mini-ru-call",
+        "channel": "voice call",
+        "language": "RU",
+        "transcript": [
+          {"timestamp": "2026-11-03T10:00:00.0000000+00:00", "speaker": "system", "text": "Запись и транскрибирование запущены."},
+          {"timestamp": "2026-11-03T10:00:05.0000000+00:00", "speaker": "bot", "text": "Здравствуйте, вы позвонили во Фридом брокер."},
+          {"timestamp": "2026-11-03T10:00:10.0000000+00:00", "speaker": "client", "text": "2"},
+          {"timestamp": "2026-11-03T10:00:12.0000000+00:00", "speaker": "system", "text": "Клиент переведен от агента на представителя службы поддержки"},
+          {"timestamp": "2026-11-03T10:00:13.0000000+00:00", "speaker": "system", "text": "Запись и транскрибирование приостановлены."},
+          {"timestamp": "2026-11-03T10:00:20.0000000+00:00", "speaker": "system", "text": "Агент присоединился к разговору с клиентом."},
+          {"timestamp": "2026-11-03T10:00:23.0000000+00:00", "speaker": "system", "text": "Запись и транскрибирование возобновлены."},
+          {"timestamp": "2026-11-03T10:00:28.0000000+00:00", "speaker": "operator", "text": "Здравствуйте, меня зовут [Имя скрыто], чем могу помочь?"},
+          {"timestamp": "2026-11-03T10:00:35.0000000+00:00", "speaker": "client", "text": "Хочу узнать статус заявки."},
+          {"timestamp": "2026-11-03T10:00:36.5000000+00:00", "speaker": "system", "text": "Клиент находится на удержании."},
+          {"timestamp": "2026-11-03T10:00:40.0000000+00:00", "speaker": "operator", "text": "Коллега, подскажи по заявке клиента."},
+          {"timestamp": "2026-11-03T10:00:50.0000000+00:00", "speaker": "operator", "text": "Да, вижу, исполнена."},
+          {"timestamp": "2026-11-03T10:03:20.0000000+00:00", "speaker": "system", "text": "Клиент больше не находится на удержании."},
+          {"timestamp": "2026-11-03T10:03:21.0000000+00:00", "speaker": "operator", "text": "Спасибо за ожидание, заявка исполнена."},
+          {"timestamp": "2026-11-03T10:03:25.0000000+00:00", "speaker": "client", "text": "Понятно, спасибо."},
+          {"timestamp": "2026-11-03T10:03:25.0000000+00:00", "speaker": "client", "text": "Понятно, спасибо."},
+          {"timestamp": "2026-11-03T10:03:27.0000000+00:00", "speaker": "system", "text": "Клиент завершил разговор."},
+          {"timestamp": "2026-11-03T10:03:27.5000000+00:00", "speaker": "operator", "text": "Всего доброго."}
+        ],
+        "audio_url": "https://audio.example.invalid/play?id=42&sig=FAKESIG"
+      }
+    ]
+  }
+}

@@ -13,15 +13,25 @@ profiles:
     max_concurrency: 8
     rpm: 300
     price: {input: null, cached_input: null, output: null}
-  gemini-argon:
+  gemini-flash-high:            # «сильная» роль без дорогих моделей: та же Flash с глубоким рассуждением
     provider: gemini
-    model: gemini-4-argon
+    model: gemini-3.8-flash
+    api_key_env: GEMINI_API_KEY
+    thinking_level: high
+    max_output_tokens: 16384
+    max_concurrency: 6
+    rpm: 300
+    price: {input: null, cached_input: null, output: null}
+  gemini-flash-37:
+    provider: gemini
+    model: gemini-3.7-flash
     api_key_env: GEMINI_API_KEY
     thinking_level: low
     max_output_tokens: 8192
-    max_concurrency: 6
-    rpm: 150
-    price: {input: 2.0, cached_input: 0.1, output: 10.0}
+    max_concurrency: 8
+    rpm: 300
+    price: {input: null, cached_input: null, output: null}
+  # gemini-4-argon не используем: слишком дорогой (решение пользователя 2026-11-07)
   gemini-pro31:
     provider: gemini
     model: gemini-3.1-pro-preview
@@ -60,6 +70,6 @@ profiles:
 
 roles:
   judge: gemini-flash          # оценка критериев
-  strong: gemini-argon         # второе мнение, конструктор критерия, тренажёр, тьютор
-  cross_check: gemini-argon    # перекрёстная проверка
+  strong: gemini-flash-high    # второе мнение, конструктор критерия, тренажёр, тьютор
+  cross_check: gemma-api       # перекрёстная проверка: другое семейство моделей + превью локального режима
   signals: gemini-flash        # причина обращения, вопросы без ответа
