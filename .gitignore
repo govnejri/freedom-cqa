@@ -1,0 +1,30 @@
+# Секреты: подписанная ссылка API (sig=) и ключи моделей
+.env
+.env.*
+!.env.example
+
+# Данные организаторов: в audio_url и ссылке API есть sig=
+data/
+*.mp3
+*.wav
+
+# PDF гайда содержит кнопку с подписанной ссылкой API — в открытый репо нельзя.
+# Текст задания без ссылки лежит в docs/task.txt
+docs/CQA_Hackathon_Student_Guide*.pdf
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+*.db
+*.sqlite3
+
+# Node
+node_modules/
+dist/
+
+# OS / IDE
+.DS_Store
+.idea/
+.vscode/
