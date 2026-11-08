@@ -9,6 +9,8 @@ events:
     exact: ["Агент присоединился к разговору с клиентом"]
   transfer:
     exact: ["Клиент переведен от агента на представителя службы поддержки"]
+  verification_started:                # проверка начата, но ещё не подтверждена — не identity_types
+    exact: ["Оператор начал проверку", "Оператор тексеруді бастады", "Agent started verification"]
   identity_verified:
     exact: ["Личность клиента подтверждена", "Клиенттің жеке басы расталды", "Customer identity verified"]
   operator_closed:
@@ -17,6 +19,7 @@ events:
     exact: ["Соединение с клиентом прервано", "Клиентпен байланыс үзілді", "Connection to customer lost"]
   client_left:
     exact: ["Клиент покинул чат", "Клиент чаттан шықты", "Customer left the chat"]
+    regex: ["клиент .*покинул чат", "клиент .*чаттан шықты", "customer .*left the chat"]   # варианты: «вышел, не задав вопрос»
   client_ended_call:
     exact: ["Клиент завершил разговор"]
   hold_start:
