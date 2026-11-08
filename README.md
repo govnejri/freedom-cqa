@@ -1,4 +1,4 @@
-# CQA — Conversation Quality Analytics
+# CQA — Conversation Quality Analytics · команда DepaTeam
 
 Прототип для хакатона Freedom Broker. Система оценивает чаты и звонки операторов по настраиваемому чек-листу:
 - у каждой оценки — реплика-доказательство;
