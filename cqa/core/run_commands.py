@@ -155,6 +155,35 @@ def register(app: typer.Typer) -> None:
         else:
             sys.stdout.write(text)
 
+    @app.command("results")
+    def results_cmd(
+        group: str = typer.Option(..., help="Группа диалогов, например DEV или ID контрольного набора"),
+        out: Path = typer.Option(..., help="Файл, например results/prod/results.json"),
+        team: str = typer.Option(None, help="Название команды (по умолчанию CQA_TEAM_NAME из окружения)"),
+        mode: str = typer.Option("external_api", help="local | external_api | hybrid"),
+        expect: int = typer.Option(None, help="Сколько записей должно быть (prod — 10)"),
+    ):
+        """Результаты в формате сдачи организаторам (JSON 1.0) + проверка формата."""
+        import os
+        from cqa.export.results import build_results, validate
+        con = _con()
+        team = team or os.environ.get("CQA_TEAM_NAME") or ""
+        doc = build_results(con, group, team, mode)
+        ids = [r["external_id"] for r in con.execute(
+            "SELECT external_id FROM conversations WHERE group_id=? AND parent_uid IS NULL", (group,))]
+        errs = validate(doc, ids)
+        if expect is not None and len(doc["results"]) != expect:
+            errs.append(f"записей {len(doc['results'])}, ожидалось {expect}")
+        Path(out).parent.mkdir(parents=True, exist_ok=True)
+        Path(out).write_text(json.dumps(doc, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        ok = sum(r["status"] == "ok" for r in doc["results"])
+        typer.echo(f"записано: {out} — {len(doc['results'])} диалогов, ok {ok}, error {len(doc['results']) - ok}, модель {doc['model']['name']}")
+        for e in errs:
+            typer.echo(f"  ОШИБКА ФОРМАТА: {e}")
+        if errs:
+            raise typer.Exit(1)
+        typer.echo("формат проверен: ошибок нет")
+
     @app.command("freeze")
     def freeze_cmd(profile: str = typer.Option(None), version: int = typer.Option(None)):
         """Заморозить версию чек-листа и профиль судьи для контрольного этапа."""

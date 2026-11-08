@@ -60,10 +60,22 @@ profiles:
   local:                                 # Ollama на ноутбуке, см. docs/core-eval.md «Локальная модель»
     provider: openai_compat
     base_url_env: LOCAL_LLM_BASE_URL     # туннель: ssh -N -L 11435:127.0.0.1:11434 home → http://127.0.0.1:11435/v1
-    model: cqa-gemma4                    # Ollama: FROM gemma4:26b-a4b-it-qat, num_ctx 16384 (нужна Ollama ≥0.20); проверка цепочки — cqa-gemma3
-    thinking_level: "none"               # reasoning_effort=none: без режима размышления (Ollama ≥0.18 понимает none)
+    model: cqa-gemma4                    # Ollama: FROM gemma4:26b-a4b-it-qat, num_ctx 16384 (нужна Ollama ≥0.20)
+    thinking_level: "none"               # reasoning_effort=none: без режима размышления
     api_key_env: null
     json_mode: json_schema               # json_schema | json_object | none; Ollama соблюдает порядок полей схемы
+    max_output_tokens: 2048
+    max_concurrency: 1
+    rpm: 600
+    timeout_sec: 240
+    price: {input: 0.0, cached_input: 0.0, output: 0.0}
+  local-12b:                             # та же Ollama, Gemma 4 12B — почти целиком в 8 ГБ VRAM, быстрее 26B
+    provider: openai_compat
+    base_url_env: LOCAL_LLM_BASE_URL
+    model: cqa-gemma4-12b                # Ollama: FROM gemma4:12b-it-qat, num_ctx 16384
+    thinking_level: "none"
+    api_key_env: null
+    json_mode: json_schema
     max_output_tokens: 2048
     max_concurrency: 1
     rpm: 600
