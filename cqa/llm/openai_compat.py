@@ -5,6 +5,12 @@ json_mode профиля:
 - json_object — {"type": "json_object"}, схема текстом в system;
 - none — без response_format, схема текстом в system.
 Usage приводится к виду gateway: completion_tokens — видимый ответ без reasoning-токенов.
+
+Обрезанный контекст. Ollama не сообщает об ошибке, если промпт длиннее num_ctx: она молча выбрасывает
+старые сообщения (у судьи — весь диалог), и модель выносит вердикт, не видя диалога (замер 2026-11-08, Ollama 0.18).
+Поэтому ответ со статусом ok перепроверяется (context_problem) и при подозрении помечается truncated:
+- слишком много символов на токен промпта — сервер выбросил часть промпта;
+- промпт + ответ ≥ фактического num_ctx модели (Ollama /api/ps) — контекст переполнен при генерации.
 """
 from __future__ import annotations
 
@@ -21,6 +27,61 @@ HTTP_TIMEOUT_SEC = 230.0
 _CLIENTS: "weakref.WeakKeyDictionary[asyncio.AbstractEventLoop, dict[tuple, Any]]" = weakref.WeakKeyDictionary()
 
 SCHEMA_HINT = ("Ответь одним JSON-объектом строго по этой JSON Schema, без текста вокруг и без ```:\n{schema}")
+
+# Русский и казахский текст в токенизаторе Gemma — 2.3–2.7 символа на токен, английский — до ~4.5.
+# Больше MAX_CHARS_PER_TOKEN — сервер отбросил часть промпта. Короткие промпты не проверяем.
+MAX_CHARS_PER_TOKEN = 6.0
+MIN_CHARS_FOR_RATIO = 4000
+
+_NUM_CTX: dict[tuple[str, str], int | None] = {}   # (base_url, model) → num_ctx; None — сервер его не сообщает
+
+
+def context_problem(messages: list[dict[str, str]], usage: Usage, num_ctx: int | None) -> str | None:
+    """Причина считать ответ обрезанным по контексту или None."""
+    chars = sum(len(m["content"]) for m in messages)
+    if usage.prompt_tokens and chars >= MIN_CHARS_FOR_RATIO and chars / usage.prompt_tokens > MAX_CHARS_PER_TOKEN:
+        return (f"промпт обрезан сервером: {usage.prompt_tokens} токенов на {chars} символов — "
+                f"увеличьте num_ctx модели")
+    total = usage.prompt_tokens + usage.completion_tokens + usage.reasoning_tokens
+    if num_ctx and total >= num_ctx:
+        return f"контекст переполнен: промпт и ответ — {total} токенов при num_ctx={num_ctx}"
+    return None
+
+
+async def fetch_num_ctx(base_url: str, model: str, transport=None) -> tuple[bool, int | None]:
+    """Ollama: фактический context_length загруженной модели из /api/ps.
+
+    (True, n) — найден; (True, None) — сервер не Ollama или не сообщает; (False, None) — модели нет среди
+    загруженных (спросить позже)."""
+    import httpx
+
+    root = base_url.rstrip("/").removesuffix("/v1")
+    try:
+        async with httpx.AsyncClient(timeout=5.0, transport=transport) as h:
+            r = await h.get(root + "/api/ps")
+        models = r.json().get("models") if r.status_code == 200 else None
+    except (httpx.HTTPError, ValueError, AttributeError):
+        models = None
+    if not isinstance(models, list):
+        return True, None
+    names = {model} if ":" in model else {model, model + ":latest"}
+    for m in models:
+        if isinstance(m, dict) and (m.get("name") in names or m.get("model") in names):
+            n = m.get("context_length")
+            return True, (n if isinstance(n, int) and n > 0 else None)
+    return False, None
+
+
+async def _num_ctx(base_url: str | None, model: str) -> int | None:
+    if not base_url:
+        return None
+    key = (base_url, model)
+    if key not in _NUM_CTX:
+        final, n = await fetch_num_ctx(base_url, model)
+        if not final:
+            return None
+        _NUM_CTX[key] = n
+    return _NUM_CTX[key]
 
 
 def _client(profile: Profile):
@@ -123,5 +184,10 @@ class OpenAICompatProvider:
             status, error = "truncated", "ответ обрезан по max_tokens"
         elif fr == "content_filter":
             status, error = "refused", "ответ заблокирован фильтром"
+        if status == "ok":
+            base_url = os.environ.get(profile.base_url_env) if profile.base_url_env else None
+            problem = context_problem(kw["messages"], usage, await _num_ctx(base_url, profile.model))
+            if problem:
+                status, error = "truncated", problem
         return LLMResponse(text=text, usage=usage, finish_reason=fr, status=status, error=error,
                            model=profile.model, provider="openai_compat")
