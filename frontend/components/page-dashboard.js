@@ -197,8 +197,8 @@
           h('span', { class: 'metric__value' }, fmt.int(s.unanswered_questions)),
           h('span', { class: 'metric__label' }, t('dash.mUnans', { n: s.unanswered_questions }))),
         exact != null ? h('a', { class: 'metric metric--ai', href: '#/quality', 'data-tip': t('dash.aiTip') },
-          icon('target', 'icon--24'),
-          h('span', { class: 'metric__label' }, t('dash.aiBefore'), ' ', h('b', { class: 'metric__value', style: { fontSize: 'inherit' } }, fmt.pct1(exact)), ' ', t('dash.aiAfter')),
+          h('span', { class: 'metric__value' }, fmt.pct1(exact)),
+          h('span', { class: 'metric__label' }, t('dash.mAi')),
           icon('chevronRight')) : null);
     }
 

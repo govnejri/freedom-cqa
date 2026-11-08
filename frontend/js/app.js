@@ -10,6 +10,10 @@
     document.documentElement.setAttribute('data-theme', theme);
     var meta = document.querySelector('meta[name="color-scheme"]');
     if (meta) meta.setAttribute('content', theme === 'light' ? 'light' : theme === 'dark' ? 'dark' : 'light dark');
+    // цвет панели мобильного браузера — под шапку: белая или почти чёрная (ecosystem)
+    var dark = theme === 'dark' || (theme === 'auto' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    var tc = document.querySelector('meta[name="theme-color"]');
+    if (tc) tc.setAttribute('content', dark ? '#0B0C0E' : '#FFFFFF');
     CQA.store.set('cqa.theme', theme === 'light' ? null : theme);
   };
   CQA.theme = function () { return document.documentElement.getAttribute('data-theme') || 'light'; };

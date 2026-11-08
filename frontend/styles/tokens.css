@@ -1,30 +1,60 @@
-/* CQA · токены «Pro» в палитре Freedom Broker.
-   Графитовое меню слева, светлая рабочая область, зелёный — только действие, выбор и «хорошо»;
-   янтарный — потерянные баллы; красный — только грубые нарушения.
-   Шрифт Onest (OFL) с табличными цифрами; кириллица и казахские буквы әғқңөұүһі есть.
+/* CQA · токены в стиле продуктов Freedom (bankffin.kz, fbroker.kz, ecosystem.ffin.kz).
+   Светлая тема — как сайт банка: светло-серый фон, белые карточки с тонкой рамкой, белое меню, зелёный — действие,
+   выбор и «хорошо»; янтарный — потерянные баллы; красный — только грубые нарушения.
+   Фирменный градиент брокера (сиреневый → бирюзовый → зелёный) — дозированно: заголовок сводки, свечения фона,
+   линия под логотипом, итог «ИИ совпадает с экспертами». В таблицах, вердиктах и баллах его нет.
+   Тёмная тема — как ecosystem: почти чёрный фон, чёрное меню, неоновое свечение, градиентные заголовки.
+   Шрифт Onest (OFL) с табличными цифрами — замена фирменного CoFo Sans; кириллица и казахские буквы есть.
    Ниже — старые имена Fluent: они указывают на новые токены, поэтому старые стили страниц тоже в новой палитре. */
 :root {
   color-scheme: light;
 
-  /* бренд */
-  --brand-300: #1AE276;   /* на графите: активный раздел */
-  --brand-500: #00B323;   /* индикаторы, полоски */
-  --brand-600: #00852A;   /* кнопки, ссылки: белый текст 4.8:1 */
-  --brand-700: #00701F;   /* hover */
-  --brand-50:  #E3F6E8;   /* светлый фон «хорошо», выбранное */
-  --brand-100: #C9EED3;
-  --brand-ink: #00701F;   /* зелёный текст на светлом */
+  /* бренд: зелёные банка и логотипа */
+  --brand-300: #1AE276;   /* неон: точки и акценты на тёмном */
+  --brand-400: #4FB84E;   /* светлый зелёный банка — только декоративно (белый текст на нём 2.5:1) */
+  --brand-500: #2E9E48;   /* индикаторы, полоски, рамки кнопок: 3.4:1 на белом */
+  --brand-600: #2A8640;   /* сплошные плашки и счётчики: белый текст 4.6:1 */
+  --brand-700: #1D7A3A;   /* hover */
+  --brand-900: #055532;   /* тёмный край градиента банка */
+  --brand-50:  #EAF6EE;   /* светлый фон «хорошо», выбранное */
+  --brand-100: #CFEBD8;
+  --brand-ink: #1D7A3A;   /* зелёный текст: 5.4:1 на белом, 4.8:1 на brand-50 */
 
-  /* графит меню */
-  --rail:        #323335;
-  --rail-hover:  #3D3E41;
-  --rail-active: #4A4B4F;
-  --rail-ink:    #E2E3E5;
-  --rail-ink-2:  #A9AFB8;
-  --rail-line:   #45464A;
+  /* фирменные градиенты.
+     Кнопка: градиент банка сдвинут к тёмному краю — белый текст ≥ 4.58:1 в любой точке полосы
+     (исходный светлый край #4FB84E дал бы 2.5:1). */
+  --grad-bank: linear-gradient(83.37deg, #2A8640 10.41%, #0E6136 89.59%);
+  --grad-bank-hover: linear-gradient(83.37deg, #237A39 10.41%, #055532 89.59%);
+  --grad-broker: linear-gradient(91deg, #7D8DEE -1.79%, #1CCC9E 25.51%, #1AE276 82.98%);   /* линии и свечения */
+  /* текст градиентом брокера: те же оттенки, притемнённые до ≥ 3.4:1 на фоне (крупный текст) */
+  --grad-broker-text: linear-gradient(91deg, #5868D8 0%, #0A9476 30%, #0B9040 90%);
+  --glow-a: rgba(125, 141, 238, 0.20);   /* сиреневое свечение */
+  --glow-b: rgba(28, 204, 158, 0.16);    /* бирюзовое */
+  --glow-c: rgba(26, 226, 118, 0.14);    /* зелёное */
+
+  /* логотип (картинки встраиваются сборкой как data:-URI; url() — по одному разу, темы переключают var) */
+  --logo-light: url("../img/freedom-broker-logo.png");
+  --logo-dark: url("../img/freedom-broker-logo-dark.png");
+  --shield: url("../img/freedom-shield.png");
+  --logo: var(--logo-light);
+
+  /* меню: белое, как шапка банка */
+  --rail:        #FFFFFF;
+  --rail-hover:  #F3F4F6;
+  --rail-active: var(--brand-50);
+  --rail-ink:    #323335;   /* графит Freedom */
+  --rail-ink-2:  #6A717C;   /* подписи групп и иконки: 4.9:1 на белом */
+  --rail-ink-active: var(--brand-ink);
+  --rail-line:   #E6E8EC;
+  --topbar:      #FFFFFF;
+
+  /* тёмные всплывашки (уведомления, подсказки) — графит в обеих темах */
+  --inverse:      #323335;
+  --inverse-2:    #3E4044;
+  --inverse-ink-2: #B9BEC6;
 
   /* рабочая область */
-  --bg:        #F4F5F7;
+  --bg:        #F3F4F6;
   --surface:   #FFFFFF;
   --surface-2: #F7F8FA;   /* шапки таблиц, наведение */
   --surface-3: #EEF0F3;   /* поля, вторичные плашки */
@@ -34,24 +64,35 @@
   --ink-2:     #5B6573;   /* 5.9:1 на белом */
   --ink-3:     #7D8693;   /* только крупное и неважное */
   --ink-4:     #B2BCC8;   /* рамки полей, неактивные иконки */
-  --link:      #00852A;
+  --link:      var(--brand-ink);
 
-  /* смысловые */
+  /* заголовок страницы: в светлой теме — графит (градиент только у сводки), в тёмной — градиент ecosystem */
+  --h1-fill: none;
+  --h1-ink:  var(--ink);
+
+  /* смысловые: «Да» — зелёный, потеря — янтарный, грубое — красный */
   --amber-500: #FFA700;   /* потери баллов: полоски, точки */
-  --amber-700: #A86400;   /* текст потерь 4.7:1 */
+  --amber-700: #9A5B00;   /* текст потерь: 5.0:1 на amber-50 */
   --amber-50:  #FFF4DE;
   --amber-100: #FFE6B3;
   --red-600:   #C8322B;   /* только грубые нарушения */
-  --red-solid: #C8322B;   /* фон плашки «грубое нарушение» в обеих темах */
+  --red-solid: #C8322B;   /* фон плашки «грубое нарушение» в обеих темах: белый текст 5.3:1 */
   --red-700:   #A82822;
   --red-50:    #FCECEA;
   --red-100:   #F6CFCB;
   --info-50:   #EEF2F7;
+  /* тепловая карта «Срезов»: мало — янтарный, хорошо — зелёный */
+  --heat-1: #FFD58A; --heat-1-ink: #6B3F00;
+  --heat-2: #FFE6B3; --heat-2-ink: #7A4A00;
+  --heat-3: #FFF4DE; --heat-3-ink: #7A5300;
+  --heat-4: #D7F2DE; --heat-4-ink: #0B5A22;
+  --heat-5: #B5E8C3; --heat-5-ink: #064A18;
+  --heat-stripe: rgba(255, 255, 255, 0.6);
 
-  /* тени: смещение + мягкое размытие, без рамок */
-  --sh-1: 0 1px 2px rgba(23, 26, 31, 0.05), 0 1px 3px rgba(23, 26, 31, 0.04);
-  --sh-2: 0 2px 6px rgba(23, 26, 31, 0.06), 0 8px 24px rgba(23, 26, 31, 0.06);
-  --sh-3: 0 12px 40px rgba(23, 26, 31, 0.16), 0 2px 8px rgba(23, 26, 31, 0.08);
+  /* глубина: карточки — рамка 1 px без тени (как у банка); тени — только у всплывающего */
+  --sh-1: 0 0 0 1px var(--line);
+  --sh-2: 0 0 0 1px var(--line-2), 0 6px 20px rgba(23, 26, 31, 0.06);
+  --sh-3: 0 16px 48px rgba(23, 26, 31, 0.16), 0 2px 8px rgba(23, 26, 31, 0.08);
   --focus-ring: 0 0 0 2px var(--surface), 0 0 0 4px var(--brand-500);
 
   /* типографика */
@@ -64,13 +105,16 @@
   --fs-17: 1.0625rem;
   --fs-20: 1.25rem;
   --fs-24: 1.5rem;
+  --fs-28: 1.75rem;
   --fs-32: 2rem;
   --fs-44: 2.75rem;
+  --fw-head: 700;
 
-  /* отступы и формы */
+  /* отступы и формы: карточки 16, поля 10, кнопки и чипы — пилюли */
   --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px; --s-5: 20px; --s-6: 24px; --s-8: 32px;
-  --r-panel: 14px;
-  --r-ctl: 8px;
+  --r-panel: 16px;
+  --r-ctl: 10px;
+  --r-btn: 999px;
   --r-chip: 999px;
   --rail-w: 236px;
   --topbar-h: 56px;
@@ -124,7 +168,7 @@
   --colorNeutralBackground4: var(--surface-3);
   --colorNeutralBackground5: #E9ECF0;
   --colorNeutralBackground6: #E1E5EA;
-  --colorNeutralBackgroundInverted: var(--rail);
+  --colorNeutralBackgroundInverted: var(--inverse);
   --colorNeutralBackgroundDisabled: var(--surface-3);
   --colorSubtleBackground: transparent;
   --colorSubtleBackgroundHover: var(--surface-2);
@@ -187,7 +231,7 @@
   --borderRadiusNone: 0;
   --borderRadiusSmall: 4px;
   --borderRadiusMedium: var(--r-ctl);
-  --borderRadiusLarge: 10px;
+  --borderRadiusLarge: 12px;
   --borderRadiusXLarge: var(--r-panel);
   --borderRadiusCircular: 999px;
 
@@ -237,61 +281,130 @@
   --cqaHoldBackground: var(--amber-50);
 }
 
-/* Тёмная тема: включается в «Настройках» (data-theme) или по системе (data-theme="auto"). */
+/* Тёмная тема в стиле ecosystem.ffin.kz: включается в «Настройках» (data-theme) или по системе (data-theme="auto").
+   Значения в двух блоках одинаковые — CSS не умеет объединить атрибут и медиазапрос в одном селекторе. */
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --brand-300: #3BE58A;
-  --brand-500: #1FC245;
-  --brand-600: #10913A;
-  --brand-700: #0B7A2F;
-  --brand-50:  #13301D;
-  --brand-100: #1C4A2B;
-  --brand-ink: #4FD67E;
-  --rail:        #141517;
-  --rail-hover:  #222326;
-  --rail-active: #2C2D31;
-  --rail-line:   #26272A;
-  --bg:        #1A1B1E;
-  --surface:   #232428;
-  --surface-2: #2A2C30;
-  --surface-3: #303237;
-  --line:      #34363B;
-  --line-2:    #42454B;
-  --ink:       #ECEDEF;
-  --ink-2:     #A9B0BA;
-  --ink-3:     #8A919C;
-  --ink-4:     #5D646E;
-  --link:      #4FD67E;
+  --brand-300: #1AE276;
+  --brand-400: #50B858;
+  --brand-500: #1FC24A;
+  --brand-600: #2A8640;
+  --brand-700: #23753A;
+  --brand-50:  #0F2419;
+  --brand-100: #163A26;
+  --brand-ink: #3DDC84;
+  --grad-broker-text: linear-gradient(91deg, #1AE276 0%, #1CCC9E 40%, #7D8DEE 100%);
+  --glow-a: rgba(125, 141, 238, 0.16);
+  --glow-b: rgba(28, 204, 158, 0.16);
+  --glow-c: rgba(26, 226, 118, 0.34);
+  --logo: var(--logo-dark);
+  --rail: #050607;
+  --rail-hover: #131518;
+  --rail-active: #0F2419;
+  --rail-ink: #E4E6E9;
+  --rail-ink-2: #8E959F;
+  --rail-ink-active: #3DDC84;
+  --rail-line: #1A1D21;
+  --topbar: #0B0C0E;
+  --inverse: #26292E;
+  --inverse-2: #31353B;
+  --inverse-ink-2: #9AA1AB;
+  --bg: #0B0C0E;
+  --surface: #141619;
+  --surface-2: #1A1D21;
+  --surface-3: #212429;
+  --line: #25282D;
+  --line-2: #31353B;
+  --ink: #ECEDEF;
+  --ink-2: #A3AAB4;
+  --ink-3: #868D97;
+  --ink-4: #4D535C;
+  --h1-fill: var(--grad-broker-text);
+  --h1-ink: transparent;
   --amber-500: #FFB020;
   --amber-700: #FFC155;
-  --amber-50:  #35290F;
-  --amber-100: #4D3A12;
-  --red-600:   #FF6B61;
-  --red-700:   #FF8A82;
-  --red-50:    #3A1D1B;
-  --red-100:   #5A2A26;
-  --info-50:   #262A31;
-  --sh-1: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --sh-2: 0 4px 16px rgba(0, 0, 0, 0.35);
-  --sh-3: 0 16px 48px rgba(0, 0, 0, 0.5);
+  --amber-50: #2E2410;
+  --amber-100: #45361A;
+  --red-600: #FF6B61;
+  --red-700: #FF8A82;
+  --red-50: #33191A;
+  --red-100: #4D2423;
+  --info-50: #1C2027;
+  --heat-1: #4A3210; --heat-1-ink: #FFD58A;
+  --heat-2: #3A2B12; --heat-2-ink: #FFE0A3;
+  --heat-3: #2A2416; --heat-3-ink: #F2DDB0;
+  --heat-4: #12301F; --heat-4-ink: #9FE6B8;
+  --heat-5: #18452B; --heat-5-ink: #B8F2CC;
+  --heat-stripe: rgba(0, 0, 0, 0.35);
+  --sh-1: 0 0 0 1px var(--line);
+  --sh-2: 0 0 0 1px var(--line-2), 0 8px 24px rgba(0, 0, 0, 0.4);
+  --sh-3: 0 16px 48px rgba(0, 0, 0, 0.6), 0 0 0 1px var(--line);
   --colorNeutralForeground2: #C9CED6;
-  --colorNeutralBackground5: #33363B;
-  --colorNeutralBackground6: #3A3D43;
-  --colorBackgroundOverlay: rgba(0, 0, 0, 0.55);
+  --colorNeutralBackground5: #2A2D33;
+  --colorNeutralBackground6: #33363C;
+  --colorBackgroundOverlay: rgba(0, 0, 0, 0.6);
 }
 @media (prefers-color-scheme: dark) {
   :root[data-theme="auto"] {
     color-scheme: dark;
-    --brand-300: #3BE58A; --brand-500: #1FC245; --brand-600: #10913A; --brand-700: #0B7A2F;
-    --brand-50: #13301D; --brand-100: #1C4A2B; --brand-ink: #4FD67E;
-    --rail: #141517; --rail-hover: #222326; --rail-active: #2C2D31; --rail-line: #26272A;
-    --bg: #1A1B1E; --surface: #232428; --surface-2: #2A2C30; --surface-3: #303237;
-    --line: #34363B; --line-2: #42454B; --ink: #ECEDEF; --ink-2: #A9B0BA; --ink-3: #8A919C; --ink-4: #5D646E;
-    --link: #4FD67E; --amber-500: #FFB020; --amber-700: #FFC155; --amber-50: #35290F; --amber-100: #4D3A12;
-    --red-600: #FF6B61; --red-700: #FF8A82; --red-50: #3A1D1B; --red-100: #5A2A26; --info-50: #262A31;
-    --sh-1: 0 1px 2px rgba(0, 0, 0, 0.3); --sh-2: 0 4px 16px rgba(0, 0, 0, 0.35); --sh-3: 0 16px 48px rgba(0, 0, 0, 0.5);
-    --colorNeutralForeground2: #C9CED6; --colorNeutralBackground5: #33363B; --colorNeutralBackground6: #3A3D43;
-    --colorBackgroundOverlay: rgba(0, 0, 0, 0.55);
+    --brand-300: #1AE276;
+    --brand-400: #50B858;
+    --brand-500: #1FC24A;
+    --brand-600: #2A8640;
+    --brand-700: #23753A;
+    --brand-50:  #0F2419;
+    --brand-100: #163A26;
+    --brand-ink: #3DDC84;
+    --grad-broker-text: linear-gradient(91deg, #1AE276 0%, #1CCC9E 40%, #7D8DEE 100%);
+    --glow-a: rgba(125, 141, 238, 0.16);
+    --glow-b: rgba(28, 204, 158, 0.16);
+    --glow-c: rgba(26, 226, 118, 0.34);
+    --logo: var(--logo-dark);
+    --rail: #050607;
+    --rail-hover: #131518;
+    --rail-active: #0F2419;
+    --rail-ink: #E4E6E9;
+    --rail-ink-2: #8E959F;
+    --rail-ink-active: #3DDC84;
+    --rail-line: #1A1D21;
+    --topbar: #0B0C0E;
+    --inverse: #26292E;
+    --inverse-2: #31353B;
+    --inverse-ink-2: #9AA1AB;
+    --bg: #0B0C0E;
+    --surface: #141619;
+    --surface-2: #1A1D21;
+    --surface-3: #212429;
+    --line: #25282D;
+    --line-2: #31353B;
+    --ink: #ECEDEF;
+    --ink-2: #A3AAB4;
+    --ink-3: #868D97;
+    --ink-4: #4D535C;
+    --h1-fill: var(--grad-broker-text);
+    --h1-ink: transparent;
+    --amber-500: #FFB020;
+    --amber-700: #FFC155;
+    --amber-50: #2E2410;
+    --amber-100: #45361A;
+    --red-600: #FF6B61;
+    --red-700: #FF8A82;
+    --red-50: #33191A;
+    --red-100: #4D2423;
+    --info-50: #1C2027;
+    --heat-1: #4A3210; --heat-1-ink: #FFD58A;
+    --heat-2: #3A2B12; --heat-2-ink: #FFE0A3;
+    --heat-3: #2A2416; --heat-3-ink: #F2DDB0;
+    --heat-4: #12301F; --heat-4-ink: #9FE6B8;
+    --heat-5: #18452B; --heat-5-ink: #B8F2CC;
+    --heat-stripe: rgba(0, 0, 0, 0.35);
+    --sh-1: 0 0 0 1px var(--line);
+    --sh-2: 0 0 0 1px var(--line-2), 0 8px 24px rgba(0, 0, 0, 0.4);
+    --sh-3: 0 16px 48px rgba(0, 0, 0, 0.6), 0 0 0 1px var(--line);
+    --colorNeutralForeground2: #C9CED6;
+    --colorNeutralBackground5: #2A2D33;
+    --colorNeutralBackground6: #33363C;
+    --colorBackgroundOverlay: rgba(0, 0, 0, 0.6);
   }
 }
 

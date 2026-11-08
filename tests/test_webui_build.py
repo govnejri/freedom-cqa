@@ -1,4 +1,4 @@
-"""Сборка фронтенда в один HTML: без внешних ресурсов, со всеми компонентами и мок-данными, без sig=."""
+"""Сборка фронтенда в один HTML: без внешних ресурсов, шрифты и логотип встроены, все компоненты и мок-данные, без sig=."""
 from __future__ import annotations
 
 import json
@@ -39,6 +39,9 @@ def test_no_external_resources(built):
     assert not re.search(r"<script\b[^>]*\bsrc\s*=", html, re.I), "остался <script src>"
     assert not re.search(r"<link\b[^>]*rel=[\"']?stylesheet", html, re.I), "остался <link rel=stylesheet>"
     assert not re.search(r"@import\s+url\(\s*[\"']?https?:", html, re.I)
+    # в стилях — ни одного url() на внешний адрес (шрифты, логотип, картинки — только data:)
+    css = "\n".join(re.findall(r"<style>(.*?)</style>", html, re.S))
+    assert not re.search(r"url\(\s*[\"']?(?:https?:)?//", css, re.I)
     assert "type=\"module\"" not in html
 
 
@@ -52,7 +55,7 @@ def test_all_components_inlined(built):
     index = (FRONTEND / "index.html").read_text(encoding="utf-8")
     for rel in re.findall(r"<script\b[^>]*\bsrc=\"([^\"]+)\"", index):
         assert f"/* {rel} */" in html, rel
-    for rel in re.findall(r"<link\b[^>]*href=\"([^\"]+)\"", index):
+    for rel in re.findall(r"<link\b[^>]*rel=\"stylesheet\"[^>]*href=\"([^\"]+)\"", index):
         assert f"/* {rel} */" in html, rel
 
 
@@ -82,6 +85,55 @@ def test_fonts_embedded(built):
     css = "\n".join(re.findall(r"<style>(.*?)</style>", html, re.S))
     for m in re.finditer(r"url\(\s*[\"']?([^\"')]+)", css):
         assert m.group(1).startswith(("data:", "#")), m.group(1)[:80]
+
+
+def test_images_embedded(built):
+    """Логотип Freedom (обе темы), щит и favicon — внутри HTML как data:-URI, без путей к файлам."""
+    _, html = built
+    imgs = sorted(p.name for p in (FRONTEND / "img").glob("*.png"))
+    assert {"freedom-broker-logo.png", "freedom-broker-logo-dark.png", "freedom-shield.png"} <= set(imgs)
+    for name in imgs:
+        assert f"img/{name}" not in html, name        # путь заменён данными
+    # каждая картинка — один раз в CSS (темы переключают var(--logo)), щит — ещё и во favicon
+    assert html.count("data:image/png;base64,") == len(imgs) + 1
+    icon = re.search(r"<link\b[^>]*rel=[\"']icon[\"'][^>]*>", html)
+    assert icon and 'href="data:image/png;base64,' in icon.group(0)
+    # в разметке (вне кода скриптов и стилей) все src/href ресурсов — data:
+    markup = re.sub(r"<(script|style)\b[^>]*>.*?</\1>", "", html, flags=re.S)
+    for m in re.finditer(r"<(img|link|source|iframe)\b[^>]*\b(?:src|href)\s*=\s*[\"']([^\"']*)", markup, re.I):
+        assert m.group(2).startswith("data:"), f"<{m.group(1)}> {m.group(2)[:60]}"
+
+
+def test_build_inlines_img_src(tmp_path):
+    src = tmp_path / "fe"
+    shutil.copytree(FRONTEND, src)
+    index = src / "index.html"
+    index.write_text(index.read_text(encoding="utf-8").replace(
+        "<body>", '<body>\n  <img src="img/freedom-shield.png" alt="Freedom">', 1), encoding="utf-8")
+    res = build(src=src, out=tmp_path / "out.html")
+    html = res.path.read_text(encoding="utf-8")
+    assert re.search(r'<img src="data:image/png;base64,[A-Za-z0-9+/=]+" alt="Freedom">', html)
+    assert 'src="img/' not in html
+
+
+def test_build_rejects_external_img(tmp_path):
+    src = tmp_path / "fe"
+    shutil.copytree(FRONTEND, src)
+    index = src / "index.html"
+    index.write_text(index.read_text(encoding="utf-8").replace(
+        "<body>", '<body><img src="https://cdn.example.com/logo.png" alt="">', 1), encoding="utf-8")
+    with pytest.raises(BuildError):
+        build(src=src, out=tmp_path / "out.html")
+
+
+def test_build_rejects_missing_local_resource(tmp_path):
+    src = tmp_path / "fe"
+    shutil.copytree(FRONTEND, src)
+    index = src / "index.html"
+    index.write_text(index.read_text(encoding="utf-8").replace(
+        "</head>", '<link rel="apple-touch-icon" href="img/missing.png"></head>', 1), encoding="utf-8")
+    with pytest.raises(BuildError):
+        build(src=src, out=tmp_path / "out.html")
 
 
 def test_build_rejects_external_css_url(tmp_path):

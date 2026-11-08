@@ -1,4 +1,5 @@
-/* <cqa-app> — каркас: графитовое меню слева с группами по задачам (руководитель / QA / оператор),
+/* <cqa-app> — каркас: белое меню слева (логотип Freedom Broker, под ним «Контроль качества») с группами по задачам
+   (руководитель / QA / оператор),
    внизу «Начало работы» и «Настройки»; сверху — «хлебные крошки» и поиск (Ctrl+K); справа — рабочая область.
    Группы меню — не режимы: ничего не переключается само. На узком экране меню выезжает по кнопке. */
 (function (CQA) {
@@ -76,10 +77,10 @@
       this.nav = h('nav', { class: 'rail__nav', 'aria-label': t('nav.aria') });
       this.modeBtn = h('button', { class: 'rail__mode', type: 'button', onClick: this.openConnection.bind(this) });
       this.rail = h('aside', { class: 'rail', id: 'app-rail', 'aria-label': t('nav.menu') },
-        h('div', { class: 'row row--nowrap' },
+        h('div', { class: 'row row--nowrap rail__top' },
           h('a', { class: 'rail__brand', href: '#/', 'aria-label': t('app.title') },
-            h('span', { class: 'rail__mark', 'aria-hidden': 'true' }, icon('check')),
-            h('span', { class: 'rail__name' }, t('app.name'), h('small', null, t('app.subtitle')))),
+            h('span', { class: 'rail__logo', 'aria-hidden': 'true' }),
+            h('span', { class: 'rail__name' }, t('app.name'))),
           h('button', { class: 'btn btn--subtle btn--icon rail__close', type: 'button', 'aria-label': t('nav.closeMenu'), onClick: function () { self.closeMenu(true); } }, icon('close'))),
         this.nav,
         h('div', { class: 'rail__foot' },
@@ -100,7 +101,7 @@
         h('a', { class: 'skip-link', href: '#main', onClick: function (e) { e.preventDefault(); document.getElementById('main').focus(); } }, t('nav.skip')),
         this.rail, this.scrim,
         h('div', { class: 'app-body' },
-          h('header', { class: 'topbar' }, this.menuBtn, this.crumbs, h('div', { class: 'topbar__end' }, searchBtn)),
+          h('header', { class: 'topbar' }, this.menuBtn, h('span', { class: 'topbar__brand', 'aria-hidden': 'true' }), this.crumbs, h('div', { class: 'topbar__end' }, searchBtn)),
           this.banner,
           this.outlet));
       this.renderNav();
